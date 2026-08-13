@@ -1,6 +1,12 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
+
+<!DOCTYPE html>
+
+<!DOCTYPE html>
+
 <html lang="fr"><head>
-<!-- DCN SUIVI V15.4.1 — Bridge chargé + cache-bust -->
+<!-- DCN SUIVI V16 — Google Identity Services + Apps Script + Google Sheets -->
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -24,15 +30,8 @@
 <link href="css/cockpit.css" rel="stylesheet"/>
 <link href="css/navigation.css" rel="stylesheet"/>
 <link href="css/ux-enhancements.css" rel="stylesheet"/>
-</head>
-<body>
-<script src="js/runtime-config.js?v=1541"></script>
-<script src="js/state.js?v=1541"></script>
-<script src="js/bridge.js?v=1541"></script>
-<script src="js/api.js?v=1541"></script>
-<script src="data/empty-db.js?v=1541"></script>
-<script src="js/data-mapper.js?v=1541"></script>
-<script src="js/sync.js?v=1541"></script>
+<script async="" defer="" src="https://accounts.google.com/gsi/client?hl=fr"></script></head>
+<body><script src="js/runtime-config.js?v=160"></script><script src="js/state.js?v=160"></script><script src="js/auth.js?v=160"></script><script src="js/bridge.js?v=160"></script><script src="js/api.js?v=160"></script><script src="data/empty-db.js?v=160"></script><script src="js/data-mapper.js?v=160"></script><script src="js/sync.js?v=160"></script>
 <nav id="sb">
 <div class="logo"><div class="logo-t">Demathieu Bard</div><div class="logo-s">Construction Numérique</div><div id="serviceNameBadge" style="display:none;margin-top:6px;padding:3px 8px;background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.3);border-radius:12px;font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.3px;"></div></div>
 <div class="nav-sec">
@@ -93,74 +92,18 @@
 <div class="sbar">
 <input class="fi" id="srchProj" oninput="renderProjectsPage()" placeholder="Rechercher un projet..." style="max-width:240px;"/>
 <select class="fs" id="filtStatutProj" onchange="setProjectStatusFromSelect(this.value)"><option value="En cours">En cours</option><option value="A venir">À venir</option><option value="Solde">Soldé</option><option value="Termine">Terminé</option><option value="En attente">En attente</option><option value="A renseigner">À renseigner</option><option value="Suspendu">Suspendu</option><option value="tous">Tous les projets</option></select>
-<select class="fs" id="filtRespProj" onchange="renderProjectsPage()"><option value="">Tous responsables</option><option>Khellaf</option><option>Akli</option><option>Jean</option><option>Mandiaye</option></select>
-<select class="fs" id="filtAgenceProj" onchange="renderProjectsPage()"></select>
+<select class="fs" id="filtRespProj" onchange="renderProjectsPage()"><option value="">Tous responsables</option></select>
+<select class="fs" id="filtAgenceProj" onchange="renderProjectsPage()"><option value="">Toutes agences</option></select>
 <div style="margin-left:auto;display:flex;gap:8px;">
 <button class="btn btn-primary" onclick="openProjectModal()">+ Nouveau projet</button>
 </div>
 </div>
 <div class="project-status-dashboard" id="projectStatusDashboard"></div>
-<div class="kgrid" id="projectsMissionDashboard" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px;"><div class="kcard mission-card mc-bim-management">
-<div class="mission-icon">BM</div>
-<div class="klbl">BIM Manager</div>
-<div class="kval">12</div>
-<div class="mission-sub">projets concernés · 12 ligne(s)</div>
-<div class="mission-amount">712 450 €</div>
-<div class="mission-meta"><span class="mission-share">55% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
-</div><div class="kcard mission-card mc-bim-coordination">
-<div class="mission-icon">BC</div>
-<div class="klbl">BIM Coordination</div>
-<div class="kval">4</div>
-<div class="mission-sub">projets concernés · 4 ligne(s)</div>
-<div class="mission-amount">135 700 €</div>
-<div class="mission-meta"><span class="mission-share">10% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
-</div><div class="kcard mission-card mc-synthese-technique">
-<div class="mission-icon">ST</div>
-<div class="klbl">Synth. Tech.</div>
-<div class="kval">8</div>
-<div class="mission-sub">projets concernés · 8 ligne(s)</div>
-<div class="mission-amount">347 750 €</div>
-<div class="mission-meta"><span class="mission-share">27% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
-</div><div class="kcard mission-card mc-synthese-architecturale">
-<div class="mission-icon">SA</div>
-<div class="klbl">Synth. Archi.</div>
-<div class="kval">0</div>
-<div class="mission-sub">projet concerné · 0 ligne(s)</div>
-<div class="mission-amount">0 €</div>
-<div class="mission-meta"><span class="mission-share">0% du portefeuille affiché</span><span class="mission-pill">0 €</span></div>
-</div><div class="kcard mission-card mc-modelisation">
-<div class="mission-icon">3D</div>
-<div class="klbl">Modélisation</div>
-<div class="kval">8</div>
-<div class="mission-sub">projets concernés · 8 ligne(s)</div>
-<div class="mission-amount">101 000 €</div>
-<div class="mission-meta"><span class="mission-share">8% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
-</div><div class="kcard mission-card mc-suivi-ao">
-<div class="mission-icon">AO</div>
-<div class="klbl">Suivi commercial</div>
-<div class="kval">10</div>
-<div class="mission-sub">AO concernés · 10 en cours</div>
-<div class="mission-share" style="margin-top:6px;font-weight:800;color:#A16207;">0 déposé(s) · 0 gagné(s)</div>
-<div style="height:1px;background:rgba(202,138,4,.22);margin:8px 0;"></div>
-<div class="mission-amount">401 378 €</div>
-<div class="mission-share" style="font-weight:800;text-transform:uppercase;letter-spacing:.7px;">CA pondéré</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin:8px -18px 0;border-top:1px solid rgba(202,138,4,.2);border-bottom:1px solid rgba(202,138,4,.2);">
-<div style="padding:8px 18px;border-right:1px solid rgba(202,138,4,.2);"><div style="font-weight:800;font-size:15px;color:var(--navy);">822 405 €</div><div class="mission-share" style="font-weight:800;text-transform:uppercase;">CA potentiel</div></div>
-<div style="padding:8px 18px;"><div style="font-weight:800;font-size:15px;color:var(--navy);">0%</div><div class="mission-share" style="font-weight:800;text-transform:uppercase;">Transfo.</div></div>
-</div>
-<div class="mission-meta"><span class="mission-share">49% du pipeline sécurisé</span><span class="mission-pill">Actif</span></div>
-</div><div class="kcard mission-card mc-summary">
-<div class="mission-icon">Σ</div>
-<div class="klbl">Synthèse missions</div>
-<div class="kval">32</div>
-<div class="mission-sub">lignes de mission sur 26 projet(s) affiché(s)</div>
-<div class="mission-amount">1 296 900 €</div>
-<div class="mission-meta"><span class="mission-share">Mission dominante : <strong>BIM Manager</strong></span><span class="mission-pill">712 450 €</span></div>
-</div></div>
+<div class="kgrid" id="projectsMissionDashboard" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px;"></div>
 <div class="card" style="margin-bottom:14px;">
 <div class="ch" style="flex-direction:column;align-items:flex-start;gap:8px;">
 <div style="display:flex;width:100%;justify-content:space-between;align-items:center;">
-<span class="ct">Projets</span><span id="projectCount" style="font-size:11px;color:var(--gray-dk);">26 affichés — 26 en cours · 1 à venir · 0 soldé(s) · 4 terminé(s) · 3 en attente · 1 à renseigner · 0 suspendu(s)</span>
+<span class="ct">Projets</span><span id="projectCount" style="font-size:11px;color:var(--gray-dk);"></span>
 </div>
 <div class="stat-filter-bar" id="statFilterBar">
 <span style="font-size:10px;color:var(--gray-dk);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Afficher :</span>
@@ -196,9 +139,9 @@
 </div>
 </div>
 <div class="card"><div class="ch" style="flex-wrap:wrap;gap:8px;"><span class="ct">Plan de charge V3 — charges productives et non productives</span><div style="display:flex;gap:6px;align-items:center;"><div style="background:#F3EEF9;border:1px solid #C4B5FD;border-radius:16px;overflow:hidden;display:flex;"><button id="btnViewStd" onclick="setChargeView('standard')" style="padding: 4px 12px; font-size: 11px; font-weight: 600; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; background: var(--blue); color: rgb(255, 255, 255); border-radius: 14px; transition: 0.15s;">Standard</button><button id="btnViewCpt" onclick="setChargeView('compact')" style="padding: 4px 12px; font-size: 11px; font-weight: 600; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; background: transparent; color: rgb(109, 40, 217); border-radius: 14px; transition: 0.15s;">▦ Compacte</button></div><button class="btn btn-success btn-sm" onclick="saveDB();renderDashboard();toast('Plan de charge sauvegardé','ok')">Sauvegarder</button></div></div><div class="cb" style="padding-bottom:0;"><div class="charge-legend"><span class="chip"><span class="charge-dot" style="background:#16A34A"></span>Charge faible</span><span class="chip"><span class="charge-dot" style="background:#F59E0B"></span>Charge moyenne</span><span class="chip"><span class="charge-dot" style="background:#EF4444"></span>Charge forte</span><span class="chip"><span class="charge-dot" style="background:#E0F2FE"></span>Mois courant</span><span class="chip"><span class="charge-dot" style="background:#EDE9FE;border:1px solid #C4B5FD;"></span>Soldé / actif</span></div></div><div class="dcn-charge-filter-panel" id="dcnChargeFilterPanel">
-<div class="fgrp"><label class="flbl">Collaborateur</label><select class="fs" onchange="dcnSetChargeFilter('member',this.value)"><option value="all">Tous les collaborateurs</option><option value="m1">Khellaf</option><option value="m2">Akli</option><option value="m3">Jean</option><option value="m_1776784381130_xfl6f">Mandiaye</option></select></div>
+<div class="fgrp"><label class="flbl">Collaborateur</label><select class="fs" onchange="dcnSetChargeFilter('member',this.value)"><option value="all">Tous les collaborateurs</option></select></div>
 <div class="fgrp"><label class="flbl">Statut projet</label><select class="fs" onchange="dcnSetChargeFilter('status',this.value)"><option value="all">Tous les statuts</option><option value="A renseigner">A renseigner</option><option value="A venir">A venir</option><option value="AO / Pipeline">AO / Pipeline</option><option value="En attente">En attente</option><option value="En cours">En cours</option><option value="Termine">Termine</option></select></div>
-<div class="fgrp"><label class="flbl">État de saisie</label><select class="fs" onchange="dcnSetChargeFilter('saisie',this.value)"><option selected="" value="all">Toutes les lignes</option><option value="filled">Lignes remplies uniquement</option><option value="empty">Lignes vides uniquement</option><option value="strong">Charges fortes</option><option value="low">Charges faibles</option></select></div>
+<div class="fgrp"><label class="flbl">État de saisie</label><select class="fs" onchange="dcnSetChargeFilter('saisie',this.value)"><option value="all">Toutes les lignes</option><option value="filled">Lignes remplies uniquement</option><option value="empty">Lignes vides uniquement</option><option value="strong">Charges fortes</option><option value="low">Charges faibles</option></select></div>
 <button class="btn btn-outline btn-sm" onclick="dcnResetChargeFilters()">Réinitialiser</button>
 <button class="btn btn-accent btn-sm" onclick="dcnShowMaskedCharges()">Afficher les charges masquées</button>
 <div class="hint">Les deux vues utilisent les mêmes filtres. Les totaux affichés sont recalculés sur les lignes visibles après filtre.</div>
@@ -247,7 +190,7 @@
 <div class="etab-toolbar">
 <div class="fgrp"><label class="flbl">Année</label><select class="fs" id="filtDevisAnnee" onchange="renderDevisPage()"></select></div>
 <div class="fgrp"><label class="flbl">Statut</label><select class="fs" id="filtDevisStatut" onchange="renderDevisPage()"><option value="">Tous statuts</option><option>Brouillon</option><option>Envoyé</option><option>Accepté</option><option>En négociation</option><option>Refusé</option><option>Expiré</option></select></div>
-<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="filtDevisResp" onchange="renderDevisPage()"><option value="">Tous</option><option>Khellaf</option><option>Akli</option><option>Jean</option><option>Mandiaye</option></select></div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="filtDevisResp" onchange="renderDevisPage()"><option value="">Tous</option></select></div>
 <div class="fgrp"><label class="flbl">Trier par</label><select class="fs" id="filtDevisSort" onchange="renderDevisPage()"><option value="numero-desc">N° ↓ (récent d'abord)</option><option value="numero-asc">N° ↑ (ancien d'abord)</option><option value="date-desc">Date ↓ (récent d'abord)</option><option value="date-asc">Date ↑ (ancien d'abord)</option></select></div>
 <div class="fgrp"><label class="flbl">Recherche</label><input class="fi" id="srchDevis" oninput="renderDevisPage()" placeholder="N° devis, objet, client…" style="min-width:200px;"/></div>
 <button class="btn btn-primary" onclick="openDevisModal()">+ Nouveau devis</button>
@@ -260,67 +203,7 @@
 <th>En cours</th>
 <th>Taux transfo.</th>
 <th style="text-align:left;padding-left:8px;">Répartition</th>
-</tr></thead><tbody><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2026';renderDevisPage()" style="cursor:pointer;">
-<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2026</td>
-<td style="text-align:center;">19</td>
-<td style="text-align:center;color:var(--green);font-weight:600;">5</td>
-<td style="text-align:center;color:var(--accent);font-weight:600;">14</td>
-<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">26,3%</td>
-<td style="text-align:left;padding-left:8px;">
-<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">5 acceptés</span>
-<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">14 non validés</span>
-</td>
-</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2025';renderDevisPage()" style="cursor:pointer;">
-<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2025</td>
-<td style="text-align:center;">32</td>
-<td style="text-align:center;color:var(--green);font-weight:600;">7</td>
-<td style="text-align:center;color:var(--accent);font-weight:600;">25</td>
-<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">21,9%</td>
-<td style="text-align:left;padding-left:8px;">
-<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">7 acceptés</span>
-<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">25 non validés</span>
-</td>
-</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2024';renderDevisPage()" style="cursor:pointer;">
-<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2024</td>
-<td style="text-align:center;">45</td>
-<td style="text-align:center;color:var(--green);font-weight:600;">11</td>
-<td style="text-align:center;color:var(--accent);font-weight:600;">34</td>
-<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">24,4%</td>
-<td style="text-align:left;padding-left:8px;">
-<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">11 acceptés</span>
-<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">34 non validés</span>
-</td>
-</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2023';renderDevisPage()" style="cursor:pointer;">
-<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2023</td>
-<td style="text-align:center;">23</td>
-<td style="text-align:center;color:var(--green);font-weight:600;">3</td>
-<td style="text-align:center;color:var(--accent);font-weight:600;">20</td>
-<td style="text-align:center;font-weight:600;color:var(--red);" title="Calcul au nombre : devis acceptés / devis émis">13%</td>
-<td style="text-align:left;padding-left:8px;">
-<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">3 acceptés</span>
-<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">20 non validés</span>
-</td>
-</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2022';renderDevisPage()" style="cursor:pointer;">
-<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2022</td>
-<td style="text-align:center;">21</td>
-<td style="text-align:center;color:var(--green);font-weight:600;">5</td>
-<td style="text-align:center;color:var(--accent);font-weight:600;">16</td>
-<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">23,8%</td>
-<td style="text-align:left;padding-left:8px;">
-<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">5 acceptés</span>
-<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">16 non validés</span>
-</td>
-</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2021';renderDevisPage()" style="cursor:pointer;">
-<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2021</td>
-<td style="text-align:center;">21</td>
-<td style="text-align:center;color:var(--green);font-weight:600;">10</td>
-<td style="text-align:center;color:var(--accent);font-weight:600;">11</td>
-<td style="text-align:center;font-weight:600;color:var(--green);" title="Calcul au nombre : devis acceptés / devis émis">47,6%</td>
-<td style="text-align:left;padding-left:8px;">
-<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">10 acceptés</span>
-<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">11 non validés</span>
-</td>
-</tr></tbody></table></div>
+</tr></thead><tbody></tbody></table></div>
 <div id="devisCharts" style="margin-bottom:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;"><div style="background:var(--bg-card,#fff);border:1px solid var(--border-color,#E5EAF0);border-radius:8px;padding:14px;">
 <div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:12px;">Devis par année — volumes contrôlés</div>
 <div style="display:flex;flex-direction:column;gap:8px;"><div onclick="document.getElementById('filtDevisAnnee').value='2026';renderDevisPage()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
@@ -442,8 +325,8 @@
 <div class="page" id="page-etablissement">
 <div class="etab-toolbar">
 <div class="fgrp"><label class="flbl">Année</label><select class="fs" id="etabYear" onchange="renderEtablissementPage()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="all">Toutes</option></select></div>
-<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" data-ready="1" id="etabResp" onchange="renderEtablissementPage()"><option value="">Tous</option><option>Akli</option><option>Jean</option><option>Khellaf</option><option>Mandiaye</option></select></div>
-<div class="fgrp"><label class="flbl">Agence</label><select class="fs" data-ready="1" id="etabAgence" onchange="renderEtablissementPage()"><option value="">Toutes</option><option>ANDRE BTP - Secteur Rehabilitation</option><option>Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF</option><option>Branche Construction — DB GENIE CIVIL — Direction Déléguée France</option><option>Branche Construction — Infra GC — DB CONSTRUCTION</option><option>Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains</option><option>Bâtiment — ANDRE BTP — Pilotage Grands Projets</option><option>Bâtiment — DB BATIMENT ILE-DE-FRANCE</option><option>Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles</option><option>Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés</option><option>Bâtiment — DB BATIMENT SUD-EST</option><option>Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie</option><option>Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain</option><option>Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique</option><option>Bâtiment — DB CONSTRUCTION NORD — Agence Nord</option><option>Bâtiment — DB CONSTRUCTION SUD-OUEST</option><option>Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine</option><option>Bâtiment — DB CONSTRUCTION — Agence Lorraine</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul</option><option>Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST</option><option>DB BATIMENT IDF - Agence EPP</option><option>DB BATIMENT IDF - Agence Habitat</option><option>DB BATIMENT IDF - Agence Rehabilitation</option><option>DB BATIMENT SUD-EST - Agence Pole Metropolitain</option><option>DB BATIMENT SUD-EST - Industrie</option><option>DB CONSTRUCTION - Est - Champagne</option><option>DB CONSTRUCTION - Est - Lorraine (Metz)</option><option>DB CONSTRUCTION - Est - Lorraine (Nancy)</option><option>DB CONSTRUCTION - Grand EST</option><option>DB CONSTRUCTION - Nord - Marcq-en-Baroeul</option><option>DB CONSTRUCTION SUD-OUEST - Agence Occitanie</option><option>DB GC IDF &amp; France Ouest</option><option>DB GENIE CIVIL - Agence IDF</option><option>DB GENIE CIVIL - Dir. Deleguee France</option><option>DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</option><option>DB GENIE CIVIL - Nucleaire</option><option>DB IMMO IDF - Agence Tertiaire</option><option>Mersch &amp; Schmitz</option></select></div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="etabResp" onchange="renderEtablissementPage()"><option value="">Tous</option></select></div>
+<div class="fgrp"><label class="flbl">Agence</label><select class="fs" id="etabAgence" onchange="renderEtablissementPage()"><option value="">Toutes</option></select></div>
 <div class="fgrp"><label class="flbl">Statut</label><select class="fs" id="etabStatus" onchange="renderEtablissementPage()"><option value="">Tous statuts</option><option value="Actif">Actif</option><option value="À relancer">À relancer</option><option value="Dormant">Dormant</option><option value="Jamais travaillé">Jamais travaillé</option><option value="Prospect">Prospect</option></select></div>
 <button class="btn btn-outline" onclick="exportEtablissementCSV()">Exporter CSV</button>
 </div>
@@ -489,265 +372,7 @@
 <div class="kgrid" id="commercialKpis" style="grid-template-columns:repeat(4,1fr);"></div>
 <div class="card">
 <div class="tw">
-<div id="tbCommercial" style="padding:12px;"><div class="comm-section-hdr csh-jamais">Jamais contactés — priorité absolue (6)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-jamais" onclick="editCommercial('c12')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB BATIMENT IDF - Agence Habitat</div>
-<div class="cnote">Pas encore contacte - a aller voir</div>
-</div>
-<div class="cc">
-<span class="badge br">Jamais contacte</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c12')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c12')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-jamais" onclick="editCommercial('c13')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB BATIMENT IDF - Agence Rehabilitation</div>
-<div class="cnote">Pas encore contacte - a aller voir</div>
-</div>
-<div class="cc">
-<span class="badge br">Jamais contacte</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c13')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c13')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-jamais" onclick="editCommercial('c14')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Grand Est · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB CONSTRUCTION - Est - Lorraine (Nancy)</div>
-<div class="cnote">Pas encore contacte - a aller voir</div>
-</div>
-<div class="cc">
-<span class="badge br">Jamais contacte</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c14')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c14')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-jamais" onclick="editCommercial('c15')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Sud-Ouest · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB CONSTRUCTION SUD-OUEST - Agence Occitanie</div>
-<div class="cnote">Pas encore contacte - a aller voir</div>
-</div>
-<div class="cc">
-<span class="badge br">Jamais contacte</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c15')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c15')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-jamais" onclick="editCommercial('c16')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB IMMO IDF - Agence Tertiaire</div>
-<div class="cnote">Fort potentiel BIM - jamais approche</div>
-</div>
-<div class="cc">
-<span class="badge br">Jamais contacte</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c16')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c16')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-jamais" onclick="editCommercial('c17')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">France · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</div>
-<div class="cnote">Grands projets - fort potentiel</div>
-</div>
-<div class="cc">
-<span class="badge br">Jamais contacte</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c17')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c17')">x</button>
-</div>
-</div>
-</div></div><div class="comm-section-hdr csh-dormant">Dormants — à relancer (2)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-dormant" onclick="editCommercial('c10')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Nord · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB CONSTRUCTION - Nord - Marcq-en-Baroeul</div>
-<div class="cnote">Maubeuge cloture - relancer</div>
-</div>
-<div class="cc">
-<span class="badge bac">Dormant</span>
-<span class="act-pill act-relancer">🔔 Relancer</span>
-<span style="font-size:10px;color:var(--blue);">📅 01/05/2026</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c10')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c10')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-dormant" onclick="editCommercial('c11')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Pays de la Loire · Prio <span style="color:var(--orange);">Moyenne</span></div>
-<div class="cn">ANDRE BTP - Secteur Rehabilitation</div>
-<div class="cnote">A deja travaille avec DCN - relancer</div>
-</div>
-<div class="cc">
-<span class="badge bac">Dormant</span>
-<span class="act-pill act-relancer">🔔 Relancer</span>
-<span style="font-size:10px;color:var(--blue);">📅 15/05/2026</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c11')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c11')">x</button>
-</div>
-</div>
-</div></div><div class="comm-section-hdr csh-prospect">Prospects en cours (1)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-prospect" onclick="editCommercial('c_1777383370529_uhbez')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Luxembourg · Prio <span style="color:var(--orange);">Moyenne</span></div>
-<div class="cn">Mersch &amp; Schmitz</div>
-<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Bruno Lorrain — Directeur des services fonctionnels</div>
-<div style="font-size:10.5px;color:var(--gray-dk);">✉ b.lorrain@Mersch-Schmitz.lu · +352 621 773 918</div>
-<div class="cnote">Avons fait une réunion avec le directeur d'exploitation et les responsables du BE pour faciliter app...</div>
-</div>
-<div class="cc">
-<span class="badge bb">Prospect en cours</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c_1777383370529_uhbez')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c_1777383370529_uhbez')">x</button>
-</div>
-</div>
-</div></div><div class="comm-section-hdr csh-actif">Clients actifs (9)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-actif" onclick="editCommercial('c1')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Ile-de-France · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB BATIMENT IDF - Agence EPP</div>
-<div class="cnote">Client regulier - SNCF Pantin, Piscine Bagnolet, INRIA</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c1')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c1')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c2')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Grand Est · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB CONSTRUCTION - Est - Champagne</div>
-<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Vincent</div>
-<div class="cnote">Appeler Vincent - West Pharma Revamp en attente</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-appeler">📞 Appeler</span>
-<span style="font-size:10px;color:var(--blue);">📅 25/04/2026</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c2')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c2')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c3')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Grand Est · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB CONSTRUCTION - Est - Lorraine (Metz)</div>
-<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Isabelle KORNATZ — Directrice de Projets Etudes</div>
-<div class="cnote">EPSM Metz-Jury en cours</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c3')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c3')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c4')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF / France · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB GENIE CIVIL - Dir. Deleguee France</div>
-<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Clement LAYRAC — Ingenieur etudes</div>
-<div class="cnote">Gare Satory + PCH Caderousse en cours</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c4')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c4')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c5')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">France · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB GENIE CIVIL - Nucleaire</div>
-<div class="cnote">EPR2 en suivi strategique</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c5')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c5')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c6')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB GENIE CIVIL - Agence IDF</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c6')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c6')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c7')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF / Ouest · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB GC IDF &amp; France Ouest</div>
-<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Bastien CLEMENT — Ingenieur Etudes de Prix</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c7')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c7')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c8')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">SUD-EST · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB BATIMENT SUD-EST - Industrie</div>
-<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Jonathan CHARAMELET — Chef de groupe</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c8')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c8')">x</button>
-</div>
-</div>
-</div><div class="comm-card cs-actif" onclick="editCommercial('c9')">
-<div>
-<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">SUD-EST · Prio <span style="color:var(--red);">Haute</span></div>
-<div class="cn">DB BATIMENT SUD-EST - Agence Pole Metropolitain</div>
-</div>
-<div class="cc">
-<span class="badge bg">Actif</span>
-<span class="act-pill act-rien">✓ Rien</span>
-<div style="display:flex;gap:4px;margin-top:4px;">
-<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c9')">Edit.</button>
-<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c9')">x</button>
-</div>
-</div>
-</div></div></div>
+<div id="tbCommercial" style="padding:12px;"></div>
 </div>
 </div>
 </div>
@@ -807,8 +432,8 @@
 </main>
 <!-- MODAL PROJECT -->
 <div class="ov" id="mProject"><div class="modal project-edit-modal">
-<div class="mh"><span class="mt" id="mProjectTitle">Éditer projet</span><button class="mx" onclick="closeM('mProject')">x</button></div>
-<div class="mb"><div class="fg"><div class="project-edit-hero" id="projectEditHero"><div class="project-edit-hero-label">Projet en édition</div><div class="project-edit-hero-title" id="projectEditHeroTitle">DISNEY PONGO K1 — Centre de Secours</div><div class="project-edit-hero-sub" id="projectEditHeroSub">DBIM-0034 · A venir · DISNEY</div></div>
+<div class="mh"><span class="mt" id="mProjectTitle">Projet</span><button class="mx" onclick="closeM('mProject')">x</button></div>
+<div class="mb"><div class="fg"><div class="project-edit-hero" id="projectEditHero"><div class="project-edit-hero-label">Projet en édition</div><div class="project-edit-hero-title" id="projectEditHeroTitle">Nouveau projet</div><div class="project-edit-hero-sub" id="projectEditHeroSub"></div></div>
 <div class="sdiv psec-title identity">🔵 Identité du projet</div>
 <div class="fgrp"><label class="flbl">Code projet</label><input class="fi" data-hero-bound="1" id="prCode" placeholder="DBIM-XXXX"/></div>
 <div class="fgrp"><label class="flbl">Statut</label>
@@ -840,15 +465,15 @@
 </div>
 <div class="fgrp ff"><label class="flbl">Nom du projet *</label><input class="fi" data-hero-bound="1" id="prName"/></div>
 <div class="fgrp"><label class="flbl">Nature</label><select class="fs" id="prNature"><option>Mission directe</option><option>Aide a l AO</option></select></div>
-<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="prResp"><option>Khellaf</option><option>Akli</option><option>Jean</option><option selected="">Mandiaye</option></select></div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="prResp"></select></div>
 <div class="fgrp"><label class="flbl">Client / MOA</label><input class="fi" data-hero-bound="1" id="prClient"/></div>
 <div class="fgrp ff"><label class="flbl">Établissement DB</label>
-<select class="fs fi-combo" id="prAgency" onchange="onAgencySelect('prAgency','prAgencyBadge')"><option value="">— Sélectionner un établissement —</option><option value="ANDRE BTP - Secteur Rehabilitation">ANDRE BTP - Secteur Rehabilitation</option><option value="Bâtiment — ANDRE BTP — Pilotage Grands Projets">Bâtiment — ANDRE BTP — Pilotage Grands Projets</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE">Bâtiment — DB BATIMENT ILE-DE-FRANCE</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés</option><option value="Bâtiment — DB BATIMENT SUD-EST">Bâtiment — DB BATIMENT SUD-EST</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie">Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain">Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain</option><option value="Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique">Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique</option><option value="Bâtiment — DB CONSTRUCTION — Agence Lorraine">Bâtiment — DB CONSTRUCTION — Agence Lorraine</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul">Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul</option><option selected="" value="Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST">Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST</option><option value="Bâtiment — DB CONSTRUCTION NORD — Agence Nord">Bâtiment — DB CONSTRUCTION NORD — Agence Nord</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST">Bâtiment — DB CONSTRUCTION SUD-OUEST</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine">Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine</option><option value="Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF">Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF</option><option value="Branche Construction — DB GENIE CIVIL — Direction Déléguée France">Branche Construction — DB GENIE CIVIL — Direction Déléguée France</option><option value="Branche Construction — Infra GC — DB CONSTRUCTION">Branche Construction — Infra GC — DB CONSTRUCTION</option><option value="Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST">Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud">Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains</option><option value="DB BATIMENT IDF - Agence EPP">DB BATIMENT IDF - Agence EPP</option><option value="DB BATIMENT IDF - Agence Habitat">DB BATIMENT IDF - Agence Habitat</option><option value="DB BATIMENT IDF - Agence Rehabilitation">DB BATIMENT IDF - Agence Rehabilitation</option><option value="DB BATIMENT SUD-EST - Agence Pole Metropolitain">DB BATIMENT SUD-EST - Agence Pole Metropolitain</option><option value="DB BATIMENT SUD-EST - Industrie">DB BATIMENT SUD-EST - Industrie</option><option value="DB CONSTRUCTION - Est - Champagne">DB CONSTRUCTION - Est - Champagne</option><option value="DB CONSTRUCTION - Est - Lorraine (Metz)">DB CONSTRUCTION - Est - Lorraine (Metz)</option><option value="DB CONSTRUCTION - Est - Lorraine (Nancy)">DB CONSTRUCTION - Est - Lorraine (Nancy)</option><option value="DB CONSTRUCTION - Grand EST">DB CONSTRUCTION - Grand EST</option><option value="DB CONSTRUCTION - Nord - Marcq-en-Baroeul">DB CONSTRUCTION - Nord - Marcq-en-Baroeul</option><option value="DB CONSTRUCTION SUD-OUEST - Agence Occitanie">DB CONSTRUCTION SUD-OUEST - Agence Occitanie</option><option value="DB GC IDF &amp; France Ouest">DB GC IDF &amp; France Ouest</option><option value="DB GENIE CIVIL - Agence IDF">DB GENIE CIVIL - Agence IDF</option><option value="DB GENIE CIVIL - Dir. Deleguee France">DB GENIE CIVIL - Dir. Deleguee France</option><option value="DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs">DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</option><option value="DB GENIE CIVIL - Nucleaire">DB GENIE CIVIL - Nucleaire</option><option value="DB IMMO IDF - Agence Tertiaire">DB IMMO IDF - Agence Tertiaire</option><option value="Mersch &amp; Schmitz">Mersch &amp; Schmitz</option><option value="__custom__">✎ Autre (saisir librement)...</option></select>
+<select class="fs fi-combo" id="prAgency" onchange="onAgencySelect('prAgency','prAgencyBadge')"><option value="">— Sélectionner un établissement —</option><option value="__custom__">✎ Autre (saisir librement)...</option></select>
 <div style="margin-top:4px;display:flex;gap:6px;align-items:center;">
 <input class="fi" id="prAgencyCustom" oninput="onAgencyCustom('prAgency','prAgencyCustom')" placeholder="Ou saisir librement..." style="flex: 1 1 0%; font-size: 11px; display: none;"/>
 <button class="btn btn-outline btn-sm" onclick="toggleAgencyCustom('prAgencyCustom')" style="white-space:nowrap;" type="button">✎ Saisie libre</button>
 </div>
-<div class="etab-badge" id="prAgencyBadge" style="background: var(--green);">Suivi commercial : Actif · 👤 Clement LAYRAC</div>
+<div class="etab-badge" id="prAgencyBadge" style="background: var(--green);"></div>
 </div>
 <div class="fgrp"><label class="flbl">N° Devis</label>
 <input class="fi" id="prDevis" oninput="checkDevisDuplicate(this.value,'prDevisHint',editProjectId)" placeholder="DCN-2026-XX"/>
@@ -869,9 +494,9 @@
 <div class="fgrp"><label class="flbl">Montant facturé</label><input class="fi" id="prBilled" type="number"/></div>
 <div class="fgrp"><label class="flbl">Avancement (%)</label><input class="fi" id="prProgress" max="100" min="0" type="number"/></div>
 <div class="sdiv psec-title actors ff" id="dcnProjectActorsTitle">🟣 Acteurs du projet</div><div class="ff" id="dcnActeursWrap" style="background: rgb(248, 250, 252); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; display: block;">
-<div id="dcnActeursList"><div style="font-size:11px;color:var(--gray-dk);font-style:italic;padding:4px 0;">Aucun acteur ajouté — le responsable principal sera celui sélectionné ci-dessus.</div></div>
+<div id="dcnActeursList"></div>
 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
-<select class="fs" id="dcnActeurMembre" style="flex:1;min-width:110px;font-size:12px;"><option value="m1">Khellaf — BIM Manager </option><option value="m2">Akli — Coordinateur BIM </option><option value="m3">Jean — Synthese </option><option value="m_1776784381130_xfl6f">Mandiaye — Directeur Construction Numérique </option></select>
+<select class="fs" id="dcnActeurMembre" style="flex:1;min-width:110px;font-size:12px;"></select>
 <select class="fs" id="dcnActeurRole" style="flex:1;min-width:100px;font-size:12px;"><option>Chef de projet</option><option>Second</option><option>Contributeur</option><option>Support</option></select>
 <button class="btn btn-outline btn-sm" onclick="dcnAddActeur()" type="button">+ Ajouter</button>
 </div>
@@ -889,15 +514,15 @@
 </div></div>
 <!-- MODAL AO -->
 <div class="ov" id="mAo"><div class="modal ao-edit-modal">
-<div class="mh"><span class="mt" id="mAoTitle">Editer AO</span><button class="mx" onclick="closeM('mAo')">×</button></div>
+<div class="mh"><span class="mt" id="mAoTitle">Appel d’offre</span><button class="mx" onclick="closeM('mAo')">×</button></div>
 <div class="mb"><div class="fg">
 <div class="ao-hero-edit" id="aoEditHero">
 <div class="ao-hero-kicker" id="aoHeroKicker">AO EN ÉDITION</div>
-<div class="ao-hero-name" id="aoHeroName">PARIS 9E — RÉHABILITATION BUREAUX</div>
+<div class="ao-hero-name" id="aoHeroName">NOUVEL APPEL D’OFFRES</div>
 <div class="ao-hero-meta">
-<span id="aoHeroClient">Client : REAL FR HAUSSMANN SAS c/o PIMCO Prime Real Estate GmbH</span>
-<span id="aoHeroDevis">Devis : —</span>
-<span id="aoHeroPhase">Phase : Qualification</span>
+<span id="aoHeroClient">Client : —</span>
+<span id="aoHeroDevis">N° devis : —</span>
+<span id="aoHeroPhase">Phase : —</span>
 <span id="aoHeroProb">Probabilité : 50%</span>
 <span id="aoHeroDate">Date réponse : —</span>
 </div>
@@ -906,11 +531,11 @@
 <div class="fgrp ff"><label class="flbl">Nom opportunité <span>*</span></label><input class="fi" id="aoName" oninput="updateAoHero()"/></div>
 <div class="fgrp"><label class="flbl">Client</label><input class="fi" id="aoClient" oninput="updateAoHero()"/></div>
 <div class="fgrp"><label class="flbl">Établissement DB</label>
-<select class="fs fi-combo" id="aoAgency" onchange="onAgencySelect('aoAgency','aoAgencyBadge')"><option value="">— Sélectionner un établissement —</option><option value="ANDRE BTP - Secteur Rehabilitation">ANDRE BTP - Secteur Rehabilitation</option><option value="Bâtiment — ANDRE BTP — Pilotage Grands Projets">Bâtiment — ANDRE BTP — Pilotage Grands Projets</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE">Bâtiment — DB BATIMENT ILE-DE-FRANCE</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles</option><option selected="" value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés</option><option value="Bâtiment — DB BATIMENT SUD-EST">Bâtiment — DB BATIMENT SUD-EST</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie">Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain">Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain</option><option value="Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique">Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique</option><option value="Bâtiment — DB CONSTRUCTION — Agence Lorraine">Bâtiment — DB CONSTRUCTION — Agence Lorraine</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul">Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul</option><option value="Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST">Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST</option><option value="Bâtiment — DB CONSTRUCTION NORD — Agence Nord">Bâtiment — DB CONSTRUCTION NORD — Agence Nord</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST">Bâtiment — DB CONSTRUCTION SUD-OUEST</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine">Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine</option><option value="Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF">Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF</option><option value="Branche Construction — DB GENIE CIVIL — Direction Déléguée France">Branche Construction — DB GENIE CIVIL — Direction Déléguée France</option><option value="Branche Construction — Infra GC — DB CONSTRUCTION">Branche Construction — Infra GC — DB CONSTRUCTION</option><option value="Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST">Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud">Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains</option><option value="DB BATIMENT IDF - Agence EPP">DB BATIMENT IDF - Agence EPP</option><option value="DB BATIMENT IDF - Agence Habitat">DB BATIMENT IDF - Agence Habitat</option><option value="DB BATIMENT IDF - Agence Rehabilitation">DB BATIMENT IDF - Agence Rehabilitation</option><option value="DB BATIMENT SUD-EST - Agence Pole Metropolitain">DB BATIMENT SUD-EST - Agence Pole Metropolitain</option><option value="DB BATIMENT SUD-EST - Industrie">DB BATIMENT SUD-EST - Industrie</option><option value="DB CONSTRUCTION - Est - Champagne">DB CONSTRUCTION - Est - Champagne</option><option value="DB CONSTRUCTION - Est - Lorraine (Metz)">DB CONSTRUCTION - Est - Lorraine (Metz)</option><option value="DB CONSTRUCTION - Est - Lorraine (Nancy)">DB CONSTRUCTION - Est - Lorraine (Nancy)</option><option value="DB CONSTRUCTION - Grand EST">DB CONSTRUCTION - Grand EST</option><option value="DB CONSTRUCTION - Nord - Marcq-en-Baroeul">DB CONSTRUCTION - Nord - Marcq-en-Baroeul</option><option value="DB CONSTRUCTION SUD-OUEST - Agence Occitanie">DB CONSTRUCTION SUD-OUEST - Agence Occitanie</option><option value="DB GC IDF &amp; France Ouest">DB GC IDF &amp; France Ouest</option><option value="DB GENIE CIVIL - Agence IDF">DB GENIE CIVIL - Agence IDF</option><option value="DB GENIE CIVIL - Dir. Deleguee France">DB GENIE CIVIL - Dir. Deleguee France</option><option value="DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs">DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</option><option value="DB GENIE CIVIL - Nucleaire">DB GENIE CIVIL - Nucleaire</option><option value="DB IMMO IDF - Agence Tertiaire">DB IMMO IDF - Agence Tertiaire</option><option value="Mersch &amp; Schmitz">Mersch &amp; Schmitz</option><option value="__custom__">✎ Autre (saisir librement)...</option></select>
+<select class="fs fi-combo" id="aoAgency" onchange="onAgencySelect('aoAgency','aoAgencyBadge')"><option value="">— Sélectionner un établissement —</option><option value="__custom__">✎ Autre (saisir librement)...</option></select>
 <input class="fi" id="aoAgencyCustom" oninput="onAgencyCustom('aoAgency','aoAgencyCustom')" placeholder="Ou saisir librement..." style="display:none;margin-top:4px;font-size:11px;"/>
 <div class="etab-badge" id="aoAgencyBadge"></div>
 </div>
-<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="aoResp"><option>Khellaf</option><option>Akli</option><option>Jean</option><option selected="">Mandiaye</option><option>Divers</option></select></div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="aoResp"></select></div>
 <div class="fgrp"><label class="flbl">Nature</label><select class="fs" id="aoNature"><option>Mission directe</option><option>Aide à l'AO</option></select></div>
 <div class="fgrp"><label class="flbl">Date réponse</label><input class="fi" id="aoDate" oninput="updateAoHero()" type="date"/></div>
 <div class="fgrp"><label class="flbl">N° devis lié</label><input class="fi" id="aoDevis" oninput="checkDevisDuplicate(this.value,'aoDevisHint',editAoId);updateAoHero()" placeholder="DCN-2026-XX"/><div class="devis-hint" id="aoDevisHint"></div></div>
@@ -941,10 +566,10 @@
 </div></div>
 <!-- MODAL COMMERCIAL -->
 <div class="ov" id="mCommercial"><div class="modal">
-<div class="mh"><span class="mt" id="mCommercialTitle">Editer fiche</span><button class="mx" onclick="closeM('mCommercial')">x</button></div>
+<div class="mh"><span class="mt" id="mCommercialTitle">Fiche commerciale</span><button class="mx" onclick="closeM('mCommercial')">x</button></div>
 <div class="mb"><div class="fg">
 <div class="sdiv">Identification</div>
-<div class="fgrp"><label class="flbl">Agence DB *</label><select class="fs" id="coAgency"></select></div>
+<div class="fgrp"><label class="flbl">Agence DB *</label><select class="fs" id="coAgency"><option value="">— Sélectionner un établissement —</option></select></div>
 <div class="fgrp"><label class="flbl">Region / Branche</label><input class="fi" id="coRegion"/></div>
 <div class="sdiv">Contact principal</div>
 <div class="fgrp"><label class="flbl">Nom</label><input class="fi" id="coContactNom"/></div>
@@ -991,7 +616,7 @@
 <div class="devis-hero-meta">
 <span id="dvHeroClient">Client : —</span>
 <span id="dvHeroNumero">N° : —</span>
-<span id="dvHeroStatut">Statut : Envoyé</span>
+<span id="dvHeroStatut">Statut : —</span>
 <span id="dvHeroMontant">Montant : 0 €</span>
 </div>
 </div>
@@ -999,7 +624,7 @@
 <div class="fgrp ff" id="dvObjetGrp"><label class="flbl">Intitulé / objet <span>*</span></label><input class="fi" id="dvObjet" oninput="updateDevisHero()" placeholder="Intitulé du devis"/></div>
 <div class="fgrp" id="dvClientGrp"><label class="flbl">Client</label><input class="fi" id="dvClient" oninput="updateDevisHero()"/></div>
 <div class="fgrp ff" id="dvAgencyGrp"><label class="flbl">Établissement DB</label>
-<select class="fs fi-combo" id="dvAgency" onchange="onAgencySelect('dvAgency','dvAgencyBadge')"></select>
+<select class="fs fi-combo" id="dvAgency" onchange="onAgencySelect('dvAgency','dvAgencyBadge')"><option value="">— Sélectionner un établissement —</option><option value="__custom__">✎ Autre (saisir librement)...</option></select>
 <input class="fi" id="dvAgencyCustom" oninput="onAgencyCustom('dvAgency','dvAgencyCustom')" placeholder="Ou saisir librement..." style="display:none;margin-top:4px;font-size:11px;"/>
 <div class="etab-badge" id="dvAgencyBadge"></div>
 </div>
@@ -1042,7 +667,7 @@
 <div class="project-sheet-preview" id="projectSheetPreview"></div>
 </div>
 </div>
-<div class="" id="toast">Fichier sauvegardé : DCN_SUIVI_20260810_15h51.html</div>
+<div class="" id="toast"></div>
 <script src="js/vendor/minichart.js"></script>
 <script src="js/app-core.js"></script>
 <script src="js/projects.js"></script>
@@ -1060,7 +685,7 @@
 <div class="modal" style="max-width:440px;">
 <div class="mh"><span class="mt" id="mConfirmTitle">Rebasculer en AO</span></div>
 <div class="mb" style="padding:20px 24px;">
-<p id="mConfirmMsg" style="font-size:14px;line-height:1.6;margin-bottom:20px;">"DISNEY PONGO K1 — Centre de Secours" sera retiré des projets et remis dans le pipeline AO. Les lignes de charge seront retirées.</p>
+<p id="mConfirmMsg" style="font-size:14px;line-height:1.6;margin-bottom:20px;">Confirmer cette action ?</p>
 <div style="display:flex;gap:10px;justify-content:flex-end;">
 <button class="btn btn-outline" onclick="closeM('mConfirm')">Annuler</button>
 <button class="btn btn-danger" id="mConfirmYes" onclick="_mConfirmOk()">Confirmer</button>
@@ -1087,6 +712,5 @@
 <script src="js/cockpit.js"></script>
 <script src="js/navigation.js"></script>
 <script src="js/save-adapter.js"></script>
-<script src="js/pre-init.js?v=1541"></script>
-
+<script src="js/pre-init.js?v=160"></script>
 </body></html>
