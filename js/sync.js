@@ -29,6 +29,13 @@
       inFlight=false;if(pending)timer=setTimeout(()=>flush(db),1200);
     }
   }
+
+  function adoptField(db,field){
+    if(!db||!field)return;
+    if(!baseline)baseline=clone(db);
+    else baseline[field]=clone(db[field]);
+    if(window.DCN_STATE)window.DCN_STATE.persistCache(db);
+  }
   function getState(){return {pending,inFlight,lastError:lastError?lastError.message:null};}
-  window.DCN_SYNC={init,schedule,flush,getState};
+  window.DCN_SYNC={init,schedule,flush,getState,adoptField};
 })();
