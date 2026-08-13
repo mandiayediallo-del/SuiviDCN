@@ -5,6 +5,53 @@ const NOW=new Date(); const MONTH_NOW=NOW.getMonth(); let ACTIVE_MONTH=MONTH_NOW
 let editProjectId=null, editAoId=null, editCommercialId=null, editFactureId=null;
 const STATUTS_CHARGE_ACTIF=['En cours','A venir','A renseigner'];
 
+/* V16.1.1 — helper global de navigation clavier des grilles.
+   Cette fonction était auparavant locale à forecasts-import.js alors que
+   le plan de charge et app-core l'utilisent également. */
+function focusTableRow(el){
+  const tr=el && el.closest ? el.closest('tr') : null;
+  if(!tr) return;
+  const parent=tr.parentElement;
+  if(parent){
+    parent.querySelectorAll('tr.row-focus').forEach(function(r){
+      r.classList.remove('row-focus');
+    });
+  }
+  tr.classList.add('row-focus');
+}
+
+function bindGridNavigation(scopeSelector){
+  document.querySelectorAll(scopeSelector).forEach(function(input){
+    if(input.dataset && input.dataset.dcnGridNavBound === '1') return;
+    if(input.dataset) input.dataset.dcnGridNavBound='1';
+
+    input.addEventListener('focus',function(){
+      focusTableRow(input);
+    });
+
+    input.addEventListener('keydown',function(e){
+      if(e.key!=='Enter') return;
+      e.preventDefault();
+      const row=input.closest('tr');
+      if(!row) return;
+      const col=Number(input.dataset.col||0);
+      let next=row.nextElementSibling;
+      while(next){
+        const target=next.querySelector('[data-col="'+col+'"]');
+        if(target){
+          target.focus();
+          if(typeof target.select==='function') target.select();
+          return;
+        }
+        next=next.nextElementSibling;
+      }
+    });
+  });
+}
+window.focusTableRow=focusTableRow;
+window.bindGridNavigation=bindGridNavigation;
+
+
 function defaultDB(){
   try{
     if(window.DCN_EMPTY_DB) return JSON.parse(JSON.stringify(window.DCN_EMPTY_DB));
