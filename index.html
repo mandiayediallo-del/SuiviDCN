@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<!-- DCN SUIVI V15B — GitHub Pages + Google Sheets / Apps Script -->
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
+<meta content="no-cache" http-equiv="Pragma"/>
+<meta content="0" http-equiv="Expires"/>
+<title>Construction Numérique — Demathieu Bard</title>
+<!-- DCN FIX V3 : modale projet scrollable, acteurs/notes accessibles -->
+<!-- DCN V6 NETTOYAGE
+     - CSS dupliqué supprimé
+     - styles projet consolidés
+     - injection CSS redondante supprimée
+     - modales runtime accumulées supprimées
+     - sauvegarde HTML assainie pour éviter leur réapparition
+     - aucune donnée métier modifiée volontairement
+-->
+<link href="css/base.css" rel="stylesheet"/>
+<link href="css/modals.css" rel="stylesheet"/>
+<link href="css/projects.css" rel="stylesheet"/>
+<link href="css/charges.css" rel="stylesheet"/>
+<link href="css/forecasts.css" rel="stylesheet"/>
+<link href="css/cockpit.css" rel="stylesheet"/>
+<link href="css/navigation.css" rel="stylesheet"/>
+<link href="css/ux-enhancements.css" rel="stylesheet"/>
+</head>
+<body>
+<script src="js/runtime-config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/api.js"></script>
+<script src="data/empty-db.js"></script>
+<script src="js/data-mapper.js"></script>
+<script src="js/sync.js"></script>
+<nav id="sb">
+<div class="logo"><div class="logo-t">Demathieu Bard</div><div class="logo-s">Construction Numérique</div><div id="serviceNameBadge" style="display:none;margin-top:6px;padding:3px 8px;background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.3);border-radius:12px;font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.3px;"></div></div>
+<div class="nav-sec">
+<div class="nav-lbl">Navigation</div>
+<div class="ni" data-page="dashboard" onclick="goPage('dashboard')">◼ Dashboard</div>
+<div class="ni active" data-page="projets" onclick="goPage('projets')">◼ Projets</div>
+<div class="ni" data-page="previsions" onclick="goPage('previsions')">◼ Prévisions</div>
+<div class="ni" data-page="charge" onclick="goPage('charge')">◼ Plan de charge</div>
+<div class="ni" data-page="gantt" onclick="goPage('gantt')">◼ Planning Gantt</div>
+<div class="ni" data-page="pipeline" onclick="goPage('pipeline')">◼ Pipeline Appels d'offre</div>
+<div class="ni" data-page="devis" onclick="goPage('devis')">◼ Suivi des devis</div>
+<div class="ni" data-page="etablissement" onclick="goPage('etablissement')">◼ Suivi des établissements</div>
+<div class="ni" data-page="commercial" onclick="goPage('commercial')">◼ Suivi commercial</div>
+<div class="ni" data-page="facturation" onclick="goPage('facturation')">◼ Facturation</div>
+<div class="ni" data-page="config" onclick="goPage('config')">◼ Configuration</div>
+</div>
+<div class="sb-foot">Construction Numérique · 2026</div>
+</nav>
+<div id="tb">
+<div class="pg-title" id="pgTitle">Projets</div>
+<div class="tb-right">
+<div class="month-nav">
+<button class="btn btn-outline btn-sm" onclick="changeMonth(-1)">◀</button>
+<select class="fs month-select" id="monthSelect" onchange="setActiveMonth(Number(this.value))"></select>
+<button class="btn btn-outline btn-sm" onclick="changeMonth(1)">▶</button>
+</div>
+<span class="month-badge" id="monthBadge">Vue : Aout 2026</span>
+<input accept=".json" id="jsonImportInput" onchange="importJSON(this)" style="display:none;" type="file"/>
+<span id="lastActionIndicator" style="font-size:11px;color:var(--green);font-weight:500;opacity:0;transition:opacity .4s;white-space:nowrap;"></span>
+<button class="btn btn-outline" onclick="exportJSON()" title="Exporter les données en JSON">↓ Exporter JSON</button>
+<button class="btn" onclick="document.getElementById('jsonImportInput').click()" style="background:#16A34A;color:#fff;border:1px solid #15803D;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;" title="Importer un fichier JSON">↑ Importer JSON</button>
+<button class="btn btn-primary" onclick="exportExcel()">Export Excel</button>
+<button class="btn btn-success" onclick="saveHtmlFile()" title="Forcer la synchronisation avec Google Sheets">💾 Sauvegarder les données</button>
+</div>
+</div>
+<main id="main">
+<div class="page" id="page-dashboard">
+<div class="kgrid" id="kpiGrid"></div>
+<div class="ca-grid" id="dashboardCAFocus"></div>
+<div class="g2" style="margin-bottom:14px;">
+<div class="card"><div class="ch"><span class="ct" id="dashChargeTitle">Charge &amp; disponibilité — Aout 2026</span></div><div class="cb" id="dashChargeWidget"></div></div>
+<div class="card"><div class="ch"><span class="ct">Alertes prioritaires</span></div><div class="cb" id="alertsPanel"></div></div>
+</div>
+<div class="g2" style="margin-bottom:14px;">
+<div class="card"><div class="ch"><span class="ct">CA 2026 par mois</span></div><div class="cb"><div class="chart-box"><canvas height="220" id="chartCA" width="1534"></canvas></div><div class="chart-metrics" id="chartCASummary"></div></div></div>
+<div class="card"><div class="ch"><span class="ct" id="chartChargeTitle">Charge équipe — Aout 2026</span></div><div class="cb"><div class="chart-box"><canvas height="220" id="chartCharge" width="1534"></canvas></div><div class="chart-metrics" id="chartChargeSummary"></div></div></div>
+</div>
+<div class="g2" style="margin-bottom:14px;">
+<div class="card"><div class="ch"><span class="ct">Pipeline Appels d'offre par phase</span></div><div class="cb"><div class="chart-box"><canvas height="220" id="chartPipeline" width="1534"></canvas></div><div class="chart-metrics" id="chartPipelineSummary"></div></div></div>
+<div class="card"><div class="ch"><span class="ct">Statuts commerciaux</span></div><div class="cb"><div class="chart-box"><canvas height="220" id="chartCommercial" width="1534"></canvas></div><div class="chart-metrics" id="chartCommercialSummary"></div></div></div>
+</div>
+<div class="g2">
+<div class="card"><div class="ch"><span class="ct">Top projets contributeurs 2026</span></div><div class="cb" id="topProjectsPanel" style="padding:0;"></div></div>
+<div class="card"><div class="ch"><span class="ct">Synthèse portefeuille 2026</span></div><div class="cb" id="dashCommercialWidget"></div></div>
+</div>
+</div>
+<div class="page active" id="page-projets">
+<div class="sbar">
+<input class="fi" id="srchProj" oninput="renderProjectsPage()" placeholder="Rechercher un projet..." style="max-width:240px;"/>
+<select class="fs" id="filtStatutProj" onchange="setProjectStatusFromSelect(this.value)"><option value="En cours">En cours</option><option value="A venir">À venir</option><option value="Solde">Soldé</option><option value="Termine">Terminé</option><option value="En attente">En attente</option><option value="A renseigner">À renseigner</option><option value="Suspendu">Suspendu</option><option value="tous">Tous les projets</option></select>
+<select class="fs" id="filtRespProj" onchange="renderProjectsPage()"><option value="">Tous responsables</option><option>Khellaf</option><option>Akli</option><option>Jean</option><option>Mandiaye</option></select>
+<select class="fs" id="filtAgenceProj" onchange="renderProjectsPage()"></select>
+<div style="margin-left:auto;display:flex;gap:8px;">
+<button class="btn btn-primary" onclick="openProjectModal()">+ Nouveau projet</button>
+</div>
+</div>
+<div class="project-status-dashboard" id="projectStatusDashboard"></div>
+<div class="kgrid" id="projectsMissionDashboard" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px;"><div class="kcard mission-card mc-bim-management">
+<div class="mission-icon">BM</div>
+<div class="klbl">BIM Manager</div>
+<div class="kval">12</div>
+<div class="mission-sub">projets concernés · 12 ligne(s)</div>
+<div class="mission-amount">712 450 €</div>
+<div class="mission-meta"><span class="mission-share">55% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
+</div><div class="kcard mission-card mc-bim-coordination">
+<div class="mission-icon">BC</div>
+<div class="klbl">BIM Coordination</div>
+<div class="kval">4</div>
+<div class="mission-sub">projets concernés · 4 ligne(s)</div>
+<div class="mission-amount">135 700 €</div>
+<div class="mission-meta"><span class="mission-share">10% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
+</div><div class="kcard mission-card mc-synthese-technique">
+<div class="mission-icon">ST</div>
+<div class="klbl">Synth. Tech.</div>
+<div class="kval">8</div>
+<div class="mission-sub">projets concernés · 8 ligne(s)</div>
+<div class="mission-amount">347 750 €</div>
+<div class="mission-meta"><span class="mission-share">27% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
+</div><div class="kcard mission-card mc-synthese-architecturale">
+<div class="mission-icon">SA</div>
+<div class="klbl">Synth. Archi.</div>
+<div class="kval">0</div>
+<div class="mission-sub">projet concerné · 0 ligne(s)</div>
+<div class="mission-amount">0 €</div>
+<div class="mission-meta"><span class="mission-share">0% du portefeuille affiché</span><span class="mission-pill">0 €</span></div>
+</div><div class="kcard mission-card mc-modelisation">
+<div class="mission-icon">3D</div>
+<div class="klbl">Modélisation</div>
+<div class="kval">8</div>
+<div class="mission-sub">projets concernés · 8 ligne(s)</div>
+<div class="mission-amount">101 000 €</div>
+<div class="mission-meta"><span class="mission-share">8% du portefeuille affiché</span><span class="mission-pill">Actif</span></div>
+</div><div class="kcard mission-card mc-suivi-ao">
+<div class="mission-icon">AO</div>
+<div class="klbl">Suivi commercial</div>
+<div class="kval">10</div>
+<div class="mission-sub">AO concernés · 10 en cours</div>
+<div class="mission-share" style="margin-top:6px;font-weight:800;color:#A16207;">0 déposé(s) · 0 gagné(s)</div>
+<div style="height:1px;background:rgba(202,138,4,.22);margin:8px 0;"></div>
+<div class="mission-amount">401 378 €</div>
+<div class="mission-share" style="font-weight:800;text-transform:uppercase;letter-spacing:.7px;">CA pondéré</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin:8px -18px 0;border-top:1px solid rgba(202,138,4,.2);border-bottom:1px solid rgba(202,138,4,.2);">
+<div style="padding:8px 18px;border-right:1px solid rgba(202,138,4,.2);"><div style="font-weight:800;font-size:15px;color:var(--navy);">822 405 €</div><div class="mission-share" style="font-weight:800;text-transform:uppercase;">CA potentiel</div></div>
+<div style="padding:8px 18px;"><div style="font-weight:800;font-size:15px;color:var(--navy);">0%</div><div class="mission-share" style="font-weight:800;text-transform:uppercase;">Transfo.</div></div>
+</div>
+<div class="mission-meta"><span class="mission-share">49% du pipeline sécurisé</span><span class="mission-pill">Actif</span></div>
+</div><div class="kcard mission-card mc-summary">
+<div class="mission-icon">Σ</div>
+<div class="klbl">Synthèse missions</div>
+<div class="kval">32</div>
+<div class="mission-sub">lignes de mission sur 26 projet(s) affiché(s)</div>
+<div class="mission-amount">1 296 900 €</div>
+<div class="mission-meta"><span class="mission-share">Mission dominante : <strong>BIM Manager</strong></span><span class="mission-pill">712 450 €</span></div>
+</div></div>
+<div class="card" style="margin-bottom:14px;">
+<div class="ch" style="flex-direction:column;align-items:flex-start;gap:8px;">
+<div style="display:flex;width:100%;justify-content:space-between;align-items:center;">
+<span class="ct">Projets</span><span id="projectCount" style="font-size:11px;color:var(--gray-dk);">26 affichés — 26 en cours · 1 à venir · 0 soldé(s) · 4 terminé(s) · 3 en attente · 1 à renseigner · 0 suspendu(s)</span>
+</div>
+<div class="stat-filter-bar" id="statFilterBar">
+<span style="font-size:10px;color:var(--gray-dk);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Afficher :</span>
+<span class="stat-pill active" data-stat="En cours" onclick="toggleStatFilter(this)">En cours</span>
+<span class="stat-pill" data-stat="A venir" onclick="toggleStatFilter(this)">À venir</span>
+<span class="stat-pill sp-solde" data-stat="Solde" onclick="toggleStatFilter(this)">Soldé</span>
+<span class="stat-pill sp-termine" data-stat="Termine" onclick="toggleStatFilter(this)">Terminé</span>
+<span class="stat-pill" data-stat="En attente" onclick="toggleStatFilter(this)">En attente</span>
+<span class="stat-pill" data-stat="A renseigner" onclick="toggleStatFilter(this)">À renseigner</span>
+<span class="stat-pill" data-stat="Suspendu" onclick="toggleStatFilter(this)">Suspendu</span>
+<span class="stat-pill" data-stat="tous" onclick="toggleStatFilter(this)">Tous les projets</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 5px; padding: 5px 0px 4px; flex-wrap: wrap;"><button class="dcn-nav-btn">◀ Préc.</button><button class="dcn-nav-btn">Suiv. ▶</button><span class="dcn-nav-hint">(ou glisser)</span></div><div class="tw" data-dcn-nav="1"><table><thead><tr><th>Code / Projet</th><th>N° Devis</th><th>Nature</th><th>Client</th><th>Établissement DB</th><th>BIM Mgmt</th><th>BIM Coord.</th><th>Synth. Tech.</th><th>Synth. Archi.</th><th>Modélis.</th><th>Suivi AO</th><th>Total devis</th><th>CA &lt;2026</th><th>CA 2026</th><th>CA &gt;2026</th><th>Facturé</th><th>% Avanc. prév.</th><th>Resp.</th><th>Statut</th><th>Contact</th><th style="text-align:center;width:52px;">🔔</th><th></th></tr></thead><tbody id="tbProjects"></tbody></table></div>
+</div>
+<div class="card">
+<div class="ch"><span class="ct">Pipeline Appels d'offre intégré</span><span id="pipelineInlineCount">10 AO</span></div>
+<div class="tw"><table><thead><tr><th>AO</th><th>N° Devis</th><th>Nature</th><th>Client</th><th>Agence DB</th><th>Phase</th><th>Proba</th><th>Montant</th><th>Pondéré</th><th>Action</th><th>Resp.</th></tr></thead><tbody id="tbProjectsPipeline"></tbody></table></div>
+</div>
+</div>
+<div class="page" id="page-charge">
+<div class="g2" style="margin-bottom:14px;">
+<div class="card">
+<div class="ch"><span class="ct">Paramètres du mois</span></div>
+<div class="cb charge-wrap" id="monthParamsWrap"></div>
+</div>
+<div class="card">
+<div class="ch"><span class="ct">Aide de saisie</span></div>
+<div class="cb note-box">
+          Saisie acceptée : <strong>50</strong>, <strong>50%</strong> ou <strong>0,5</strong>. La V3 convertit automatiquement en pourcentage.<br/><br/>
+          Les lignes <strong>Formation</strong>, <strong>Congés</strong> et <strong>Absences</strong> sont intégrées dans les calculs de charge, disponibilité et dashboard.
+        </div>
+</div>
+</div>
+<div class="card"><div class="ch" style="flex-wrap:wrap;gap:8px;"><span class="ct">Plan de charge V3 — charges productives et non productives</span><div style="display:flex;gap:6px;align-items:center;"><div style="background:#F3EEF9;border:1px solid #C4B5FD;border-radius:16px;overflow:hidden;display:flex;"><button id="btnViewStd" onclick="setChargeView('standard')" style="padding: 4px 12px; font-size: 11px; font-weight: 600; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; background: var(--blue); color: rgb(255, 255, 255); border-radius: 14px; transition: 0.15s;">Standard</button><button id="btnViewCpt" onclick="setChargeView('compact')" style="padding: 4px 12px; font-size: 11px; font-weight: 600; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; background: transparent; color: rgb(109, 40, 217); border-radius: 14px; transition: 0.15s;">▦ Compacte</button></div><button class="btn btn-success btn-sm" onclick="saveDB();renderDashboard();toast('Plan de charge sauvegardé','ok')">Sauvegarder</button></div></div><div class="cb" style="padding-bottom:0;"><div class="charge-legend"><span class="chip"><span class="charge-dot" style="background:#16A34A"></span>Charge faible</span><span class="chip"><span class="charge-dot" style="background:#F59E0B"></span>Charge moyenne</span><span class="chip"><span class="charge-dot" style="background:#EF4444"></span>Charge forte</span><span class="chip"><span class="charge-dot" style="background:#E0F2FE"></span>Mois courant</span><span class="chip"><span class="charge-dot" style="background:#EDE9FE;border:1px solid #C4B5FD;"></span>Soldé / actif</span></div></div><div class="dcn-charge-filter-panel" id="dcnChargeFilterPanel">
+<div class="fgrp"><label class="flbl">Collaborateur</label><select class="fs" onchange="dcnSetChargeFilter('member',this.value)"><option value="all">Tous les collaborateurs</option><option value="m1">Khellaf</option><option value="m2">Akli</option><option value="m3">Jean</option><option value="m_1776784381130_xfl6f">Mandiaye</option></select></div>
+<div class="fgrp"><label class="flbl">Statut projet</label><select class="fs" onchange="dcnSetChargeFilter('status',this.value)"><option value="all">Tous les statuts</option><option value="A renseigner">A renseigner</option><option value="A venir">A venir</option><option value="AO / Pipeline">AO / Pipeline</option><option value="En attente">En attente</option><option value="En cours">En cours</option><option value="Termine">Termine</option></select></div>
+<div class="fgrp"><label class="flbl">État de saisie</label><select class="fs" onchange="dcnSetChargeFilter('saisie',this.value)"><option selected="" value="all">Toutes les lignes</option><option value="filled">Lignes remplies uniquement</option><option value="empty">Lignes vides uniquement</option><option value="strong">Charges fortes</option><option value="low">Charges faibles</option></select></div>
+<button class="btn btn-outline btn-sm" onclick="dcnResetChargeFilters()">Réinitialiser</button>
+<button class="btn btn-accent btn-sm" onclick="dcnShowMaskedCharges()">Afficher les charges masquées</button>
+<div class="hint">Les deux vues utilisent les mêmes filtres. Les totaux affichés sont recalculés sur les lignes visibles après filtre.</div>
+</div><div class="dcn-charge-filter-summary" id="dcnChargeFilterSummary">Affichage : 4 collaborateur(s), 45 ligne(s), tous statuts, toutes lignes.</div><div class="dcn-nav-bar" id="chargeNavBar" style="display:flex;align-items:center;gap:5px;padding:5px 0 4px;flex-wrap:wrap;">
+<button class="dcn-nav-btn" onclick="(function(){var e=document.getElementById('chargeWrap');var th=e.querySelector('thead tr:first-child th:nth-child(2)');var step=th?th.offsetWidth||60:60;e.scrollBy({left:-step,behavior:'smooth'});})()" title="Mois précédent">◀ Préc.</button>
+<button class="dcn-nav-btn" onclick="(function(){var e=document.getElementById('chargeWrap');var th=e.querySelector('thead tr:first-child th:nth-child(2)');var step=th?th.offsetWidth||60:60;e.scrollBy({left:step,behavior:'smooth'});})()" title="Mois suivant">Suiv. ▶</button>
+<button class="dcn-nav-btn dcn-now-btn" onclick="(function(){var e=document.getElementById('chargeWrap');var cells=e.querySelectorAll('td');for(var i=0;i&lt;cells.length;i++){if(cells[i].style.background&amp;&amp;cells[i].style.background.indexOf('month-now')!==-1){var stickyW=260;e.scrollLeft=Math.max(0,cells[i].offsetLeft-stickyW-10);return;}}})()" title="Aller au mois courant">📍 Mois actuel</button>
+<span class="dcn-nav-hint">(ou glisser avec la souris)</span>
+</div>
+<div id="chargeTopScroll" style="overflow-x:auto;overflow-y:hidden;height:12px;margin-bottom:2px;scrollbar-width:thin;scrollbar-color:#4A7BAF #E8EEF5;"><div id="chargeTopScrollInner" style="height: 1px; width: 3117px;"></div></div>
+<div class="charge-wrap" id="chargeWrap"></div></div>
+</div>
+<div class="page" id="page-gantt">
+<div class="tabs" style="margin-bottom:10px;">
+<div class="tab" id="ganttTabCollab" onclick="setGanttMode('collab',this)">Par collaborateur</div>
+<div class="tab active" id="ganttTabProject" onclick="setGanttMode('project',this)">Par projet</div>
+</div>
+<div class="card"><div class="ch"><span class="ct" id="ganttTitle">Planning Gantt 2026 — par collaborateur</span></div><div class="dcn-nav-bar" id="ganttNavBar" style="display:flex;align-items:center;gap:5px;padding:5px 0 4px;flex-wrap:wrap;">
+<button class="dcn-nav-btn" onclick="(function(){var e=document.getElementById('ganttWrap');var th=e.querySelector('thead th:nth-child(2)');var step=th?th.offsetWidth||80:80;e.scrollBy({left:-step,behavior:'smooth'});})()" title="Mois précédent">◀ Préc.</button>
+<button class="dcn-nav-btn" onclick="(function(){var e=document.getElementById('ganttWrap');var th=e.querySelector('thead th:nth-child(2)');var step=th?th.offsetWidth||80:80;e.scrollBy({left:step,behavior:'smooth'});})()" title="Mois suivant">Suiv. ▶</button>
+<button class="dcn-nav-btn dcn-now-btn" onclick="(function(){var e=document.getElementById('ganttWrap');var th=e.querySelector('th.col-now');if(th){var stickyW=200;e.scrollLeft=Math.max(0,th.offsetLeft-stickyW-10);}})()" title="Aller au mois courant">📍 Mois actuel</button>
+<span class="dcn-nav-hint">(ou glisser avec la souris)</span>
+</div>
+<div id="ganttTopScroll" style="overflow-x:auto;overflow-y:hidden;height:12px;margin-bottom:2px;scrollbar-width:thin;scrollbar-color:#4A7BAF #E8EEF5;"><div id="ganttTopScrollInner" style="height: 1px; width: 3117px;"></div></div>
+<div class="gantt-wrap" id="ganttWrap"></div></div>
+</div>
+<div class="page" id="page-pipeline">
+<div class="sbar">
+<input class="fi" id="srchAo" oninput="renderPipelinePage()" placeholder="Rechercher une AO..." style="max-width:240px;"/>
+<select class="fs" id="filtAoPhase" onchange="renderPipelinePage()"><option value="">Toutes phases</option><option>Identification</option><option>Qualification</option><option>Offre déposée</option><option>Négociation</option><option>Attribution</option><option>Perdu</option></select>
+<select class="fs" id="filtAoNature" onchange="renderPipelinePage()"><option value="">Toutes natures</option><option>Mission directe</option><option>Aide à l'AO</option></select>
+<div style="margin-left:auto;display:flex;gap:8px;">
+<button class="btn btn-primary" onclick="openAoModal()">+ Nouvelle AO</button>
+</div>
+</div>
+<div class="tabs">
+<div class="tab" onclick="switchTab('pipeline','dashboard-ao',this)">📊 Dashboard AO</div>
+<div class="tab" onclick="switchTab('pipeline','kanban',this)">Vue Kanban</div>
+<div class="tab active" onclick="switchTab('pipeline','liste',this)">Vue liste</div>
+</div>
+<div class="tpanel" id="tpanel-dashboard-ao" style="padding:0;"><div id="ao-dashboard-content"></div></div>
+<div class="tpanel" id="tpanel-kanban"><div class="kboard" id="kanban"></div></div>
+<div class="tpanel active" id="tpanel-liste"><div class="card"><div style="display: flex; align-items: center; gap: 5px; padding: 5px 0px 4px; flex-wrap: wrap;"><button class="dcn-nav-btn">◀ Préc.</button><button class="dcn-nav-btn">Suiv. ▶</button><span class="dcn-nav-hint">(ou glisser)</span></div><div class="tw" data-dcn-nav="1"><table><thead><tr><th>Opportunité</th><th>N° Devis</th><th>Nature</th><th>Client</th><th>Agence DB</th><th>Missions</th><th>Montant</th><th>Proba</th><th>Pondéré</th><th>CA 2026 pot.</th><th>Charge est.</th><th>Phase</th><th>Prochaine action</th><th>Date action</th><th></th></tr></thead><tbody id="tbAO"></tbody></table></div></div></div>
+</div>
+<div class="page" id="page-devis">
+<div class="etab-toolbar">
+<div class="fgrp"><label class="flbl">Année</label><select class="fs" id="filtDevisAnnee" onchange="renderDevisPage()"></select></div>
+<div class="fgrp"><label class="flbl">Statut</label><select class="fs" id="filtDevisStatut" onchange="renderDevisPage()"><option value="">Tous statuts</option><option>Brouillon</option><option>Envoyé</option><option>Accepté</option><option>En négociation</option><option>Refusé</option><option>Expiré</option></select></div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="filtDevisResp" onchange="renderDevisPage()"><option value="">Tous</option><option>Khellaf</option><option>Akli</option><option>Jean</option><option>Mandiaye</option></select></div>
+<div class="fgrp"><label class="flbl">Trier par</label><select class="fs" id="filtDevisSort" onchange="renderDevisPage()"><option value="numero-desc">N° ↓ (récent d'abord)</option><option value="numero-asc">N° ↑ (ancien d'abord)</option><option value="date-desc">Date ↓ (récent d'abord)</option><option value="date-asc">Date ↑ (ancien d'abord)</option></select></div>
+<div class="fgrp"><label class="flbl">Recherche</label><input class="fi" id="srchDevis" oninput="renderDevisPage()" placeholder="N° devis, objet, client…" style="min-width:200px;"/></div>
+<button class="btn btn-primary" onclick="openDevisModal()">+ Nouveau devis</button>
+</div>
+<div class="kgrid" id="devisKPIs" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px;"></div>
+<div id="devisYearTable" style="margin-bottom:14px;"><table class="ct-table" style="font-size:11px;"><thead><tr>
+<th style="text-align:left;padding-left:10px;">Année</th>
+<th>Devis émis</th>
+<th>Acceptés</th>
+<th>En cours</th>
+<th>Taux transfo.</th>
+<th style="text-align:left;padding-left:8px;">Répartition</th>
+</tr></thead><tbody><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2026';renderDevisPage()" style="cursor:pointer;">
+<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2026</td>
+<td style="text-align:center;">19</td>
+<td style="text-align:center;color:var(--green);font-weight:600;">5</td>
+<td style="text-align:center;color:var(--accent);font-weight:600;">14</td>
+<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">26,3%</td>
+<td style="text-align:left;padding-left:8px;">
+<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">5 acceptés</span>
+<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">14 non validés</span>
+</td>
+</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2025';renderDevisPage()" style="cursor:pointer;">
+<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2025</td>
+<td style="text-align:center;">32</td>
+<td style="text-align:center;color:var(--green);font-weight:600;">7</td>
+<td style="text-align:center;color:var(--accent);font-weight:600;">25</td>
+<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">21,9%</td>
+<td style="text-align:left;padding-left:8px;">
+<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">7 acceptés</span>
+<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">25 non validés</span>
+</td>
+</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2024';renderDevisPage()" style="cursor:pointer;">
+<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2024</td>
+<td style="text-align:center;">45</td>
+<td style="text-align:center;color:var(--green);font-weight:600;">11</td>
+<td style="text-align:center;color:var(--accent);font-weight:600;">34</td>
+<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">24,4%</td>
+<td style="text-align:left;padding-left:8px;">
+<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">11 acceptés</span>
+<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">34 non validés</span>
+</td>
+</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2023';renderDevisPage()" style="cursor:pointer;">
+<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2023</td>
+<td style="text-align:center;">23</td>
+<td style="text-align:center;color:var(--green);font-weight:600;">3</td>
+<td style="text-align:center;color:var(--accent);font-weight:600;">20</td>
+<td style="text-align:center;font-weight:600;color:var(--red);" title="Calcul au nombre : devis acceptés / devis émis">13%</td>
+<td style="text-align:left;padding-left:8px;">
+<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">3 acceptés</span>
+<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">20 non validés</span>
+</td>
+</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2022';renderDevisPage()" style="cursor:pointer;">
+<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2022</td>
+<td style="text-align:center;">21</td>
+<td style="text-align:center;color:var(--green);font-weight:600;">5</td>
+<td style="text-align:center;color:var(--accent);font-weight:600;">16</td>
+<td style="text-align:center;font-weight:600;color:var(--accent);" title="Calcul au nombre : devis acceptés / devis émis">23,8%</td>
+<td style="text-align:left;padding-left:8px;">
+<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">5 acceptés</span>
+<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">16 non validés</span>
+</td>
+</tr><tr class="data-row" onclick="document.getElementById('filtDevisAnnee').value='2021';renderDevisPage()" style="cursor:pointer;">
+<td style="text-align:left;padding-left:10px;font-weight:500;color:var(--navy);">2021</td>
+<td style="text-align:center;">21</td>
+<td style="text-align:center;color:var(--green);font-weight:600;">10</td>
+<td style="text-align:center;color:var(--accent);font-weight:600;">11</td>
+<td style="text-align:center;font-weight:600;color:var(--green);" title="Calcul au nombre : devis acceptés / devis émis">47,6%</td>
+<td style="text-align:left;padding-left:8px;">
+<span class="badge" style="background:#E3F5EC;color:#27AE60;border:1px solid #27AE6033;font-size:9px;margin-right:3px;">10 acceptés</span>
+<span class="badge" style="background:#FEF4E5;color:#E8A020;border:1px solid #E8A02033;font-size:9px;margin-right:3px;">11 non validés</span>
+</td>
+</tr></tbody></table></div>
+<div id="devisCharts" style="margin-bottom:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;"><div style="background:var(--bg-card,#fff);border:1px solid var(--border-color,#E5EAF0);border-radius:8px;padding:14px;">
+<div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:12px;">Devis par année — volumes contrôlés</div>
+<div style="display:flex;flex-direction:column;gap:8px;"><div onclick="document.getElementById('filtDevisAnnee').value='2026';renderDevisPage()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<div style="font-size:11px;color:var(--gray-dk);width:32px;flex-shrink:0;font-weight:400;">2026</div>
+<div style="flex:1;height:18px;border-radius:3px;background:#F1F5F9;overflow:hidden;display:flex;border:none;">
+<div style="height:100%;background:#27AE60;width:11%;"></div>
+<div style="height:100%;background:#E8A020;width:31%;"></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);width:90px;text-align:right;flex-shrink:0;">19 devis · 26,3%</div>
+</div><div onclick="document.getElementById('filtDevisAnnee').value='2025';renderDevisPage()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<div style="font-size:11px;color:var(--gray-dk);width:32px;flex-shrink:0;font-weight:400;">2025</div>
+<div style="flex:1;height:18px;border-radius:3px;background:#F1F5F9;overflow:hidden;display:flex;border:none;">
+<div style="height:100%;background:#27AE60;width:16%;"></div>
+<div style="height:100%;background:#E8A020;width:56%;"></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);width:90px;text-align:right;flex-shrink:0;">32 devis · 21,9%</div>
+</div><div onclick="document.getElementById('filtDevisAnnee').value='2024';renderDevisPage()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<div style="font-size:11px;color:var(--gray-dk);width:32px;flex-shrink:0;font-weight:400;">2024</div>
+<div style="flex:1;height:18px;border-radius:3px;background:#F1F5F9;overflow:hidden;display:flex;border:none;">
+<div style="height:100%;background:#27AE60;width:24%;"></div>
+<div style="height:100%;background:#E8A020;width:76%;"></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);width:90px;text-align:right;flex-shrink:0;">45 devis · 24,4%</div>
+</div><div onclick="document.getElementById('filtDevisAnnee').value='2023';renderDevisPage()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<div style="font-size:11px;color:var(--gray-dk);width:32px;flex-shrink:0;font-weight:400;">2023</div>
+<div style="flex:1;height:18px;border-radius:3px;background:#F1F5F9;overflow:hidden;display:flex;border:none;">
+<div style="height:100%;background:#27AE60;width:7%;"></div>
+<div style="height:100%;background:#E8A020;width:44%;"></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);width:90px;text-align:right;flex-shrink:0;">23 devis · 13%</div>
+</div><div onclick="document.getElementById('filtDevisAnnee').value='2022';renderDevisPage()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<div style="font-size:11px;color:var(--gray-dk);width:32px;flex-shrink:0;font-weight:400;">2022</div>
+<div style="flex:1;height:18px;border-radius:3px;background:#F1F5F9;overflow:hidden;display:flex;border:none;">
+<div style="height:100%;background:#27AE60;width:11%;"></div>
+<div style="height:100%;background:#E8A020;width:36%;"></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);width:90px;text-align:right;flex-shrink:0;">21 devis · 23,8%</div>
+</div><div onclick="document.getElementById('filtDevisAnnee').value='2021';renderDevisPage()" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+<div style="font-size:11px;color:var(--gray-dk);width:32px;flex-shrink:0;font-weight:400;">2021</div>
+<div style="flex:1;height:18px;border-radius:3px;background:#F1F5F9;overflow:hidden;display:flex;border:none;">
+<div style="height:100%;background:#27AE60;width:22%;"></div>
+<div style="height:100%;background:#E8A020;width:24%;"></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);width:90px;text-align:right;flex-shrink:0;">21 devis · 47,6%</div>
+</div></div>
+<div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gray-dk);"><div style="width:8px;height:8px;border-radius:2px;background:#27AE60;"></div>Accepté</div>
+<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gray-dk);"><div style="width:8px;height:8px;border-radius:2px;background:#E8A020;"></div>Non validé / en cours</div>
+<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--gray-dk);"><div style="width:8px;height:8px;border-radius:2px;background:#E74C3C;"></div>Sans suite</div>
+</div>
+</div><div style="background:var(--bg-card,#fff);border:1px solid var(--border-color,#E5EAF0);border-radius:8px;padding:14px;">
+<div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:8px;">Courbe — taux de transformation par année</div>
+<svg aria-label="Taux de transformation des devis par année" height="190" role="img" viewbox="0 0 320 170" width="100%">
+<line stroke="#E8EEF4" stroke-width="1" x1="34" x2="306" y1="142.0" y2="142.0"></line>
+<text fill="#94A3B8" font-size="7.5" text-anchor="end" x="28" y="145.0">0%</text><line stroke="#E8EEF4" stroke-width="1" x1="34" x2="306" y1="116.8" y2="116.8"></line>
+<text fill="#94A3B8" font-size="7.5" text-anchor="end" x="28" y="119.8">10%</text><line stroke="#E8EEF4" stroke-width="1" x1="34" x2="306" y1="91.6" y2="91.6"></line>
+<text fill="#94A3B8" font-size="7.5" text-anchor="end" x="28" y="94.6">20%</text><line stroke="#E8EEF4" stroke-width="1" x1="34" x2="306" y1="66.4" y2="66.4"></line>
+<text fill="#94A3B8" font-size="7.5" text-anchor="end" x="28" y="69.4">30%</text><line stroke="#E8EEF4" stroke-width="1" x1="34" x2="306" y1="41.2" y2="41.2"></line>
+<text fill="#94A3B8" font-size="7.5" text-anchor="end" x="28" y="44.2">40%</text><line stroke="#E8EEF4" stroke-width="1" x1="34" x2="306" y1="16.0" y2="16.0"></line>
+<text fill="#94A3B8" font-size="7.5" text-anchor="end" x="28" y="19.0">50%</text>
+<polyline fill="none" points="34.0,22.0 88.4,82.0 142.8,109.1 197.2,80.4 251.6,86.9 306.0,75.7" stroke="#2D5986" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4"></polyline>
+<circle cx="34.0" cy="22.0" fill="#2D5986" r="3.2" stroke="#fff" stroke-width="1.2"></circle>
+<text fill="#1A2E44" font-size="8" font-weight="700" text-anchor="middle" x="34.0" y="15.0">47,6%</text>
+<text fill="#7F8C8D" font-size="8" text-anchor="middle" x="34.0" y="162.0">2021</text><circle cx="88.4" cy="82.0" fill="#2D5986" r="3.2" stroke="#fff" stroke-width="1.2"></circle>
+<text fill="#1A2E44" font-size="8" font-weight="700" text-anchor="middle" x="88.4" y="75.0">23,8%</text>
+<text fill="#7F8C8D" font-size="8" text-anchor="middle" x="88.4" y="162.0">2022</text><circle cx="142.8" cy="109.1" fill="#2D5986" r="3.2" stroke="#fff" stroke-width="1.2"></circle>
+<text fill="#1A2E44" font-size="8" font-weight="700" text-anchor="middle" x="142.8" y="102.1">13%</text>
+<text fill="#7F8C8D" font-size="8" text-anchor="middle" x="142.8" y="162.0">2023</text><circle cx="197.2" cy="80.4" fill="#2D5986" r="3.2" stroke="#fff" stroke-width="1.2"></circle>
+<text fill="#1A2E44" font-size="8" font-weight="700" text-anchor="middle" x="197.2" y="73.4">24,4%</text>
+<text fill="#7F8C8D" font-size="8" text-anchor="middle" x="197.2" y="162.0">2024</text><circle cx="251.6" cy="86.9" fill="#2D5986" r="3.2" stroke="#fff" stroke-width="1.2"></circle>
+<text fill="#1A2E44" font-size="8" font-weight="700" text-anchor="middle" x="251.6" y="79.9">21,9%</text>
+<text fill="#7F8C8D" font-size="8" text-anchor="middle" x="251.6" y="162.0">2025</text><circle cx="306.0" cy="75.7" fill="#2D5986" r="3.2" stroke="#fff" stroke-width="1.2"></circle>
+<text fill="#1A2E44" font-size="8" font-weight="700" text-anchor="middle" x="306.0" y="68.7">26,3%</text>
+<text fill="#7F8C8D" font-size="8" text-anchor="middle" x="306.0" y="162.0">2026</text>
+</svg>
+<div style="font-size:10px;color:var(--gray-dk);line-height:1.4;">Analyse au nombre : devis acceptés / devis émis. 2025 = 7 / 32, soit 21,9 %. 2026 = 5 / 19, soit 26,3 %.</div>
+</div><div style="background:var(--bg-card,#fff);border:1px solid var(--border-color,#E5EAF0);border-radius:8px;padding:14px;">
+<div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:12px;">Répartition — toutes années contrôlées</div>
+<div style="display:flex;align-items:center;gap:16px;">
+<svg height="110" style="flex-shrink:0;" viewbox="0 0 36 36" width="110">
+<circle cx="18" cy="18" fill="none" r="15.9" stroke="#F1F5F9" stroke-width="3.2"></circle>
+<circle cx="18" cy="18" fill="none" r="15.9" stroke="#27AE60" stroke-dasharray="25.44 74.46" stroke-dashoffset="-74.90" stroke-width="3.2"></circle><circle cx="18" cy="18" fill="none" r="15.9" stroke="#E8A020" stroke-dasharray="74.46 25.44" stroke-dashoffset="-49.46" stroke-width="3.2"></circle>
+<text fill="var(--navy)" font-size="6" font-weight="700" text-anchor="middle" x="18" y="20">25,5%</text>
+<text fill="#888" font-size="3.3" text-anchor="middle" x="18" y="25">transfo.</text>
+</svg>
+<div style="display:flex;flex-direction:column;gap:7px;flex:1;"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;">
+<div style="display:flex;align-items:center;gap:6px;color:var(--gray-dk);"><div style="width:10px;height:10px;border-radius:50%;background:#27AE60;flex-shrink:0;"></div>Validé</div>
+<div style="font-weight:600;color:var(--navy);">41 <span style="color:var(--gray-mid);font-weight:400;">25,5%</span></div>
+</div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;">
+<div style="display:flex;align-items:center;gap:6px;color:var(--gray-dk);"><div style="width:10px;height:10px;border-radius:50%;background:#E8A020;flex-shrink:0;"></div>Non validé / en cours</div>
+<div style="font-weight:600;color:var(--navy);">120 <span style="color:var(--gray-mid);font-weight:400;">74,5%</span></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);margin-top:4px;">Base : 161 devis émis — calcul au nombre.</div>
+</div>
+</div>
+</div><div style="background:var(--bg-card,#fff);border:1px solid var(--border-color,#E5EAF0);border-radius:8px;padding:14px;">
+<div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:12px;">Camembert année en cours — 2026</div>
+<div style="display:flex;align-items:center;gap:16px;">
+<svg height="110" style="flex-shrink:0;" viewbox="0 0 36 36" width="110">
+<circle cx="18" cy="18" fill="none" r="15.9" stroke="#F1F5F9" stroke-width="3.2"></circle>
+<circle cx="18" cy="18" fill="none" r="15.9" stroke="#27AE60" stroke-dasharray="26.29 73.61" stroke-dashoffset="-74.90" stroke-width="3.2"></circle><circle cx="18" cy="18" fill="none" r="15.9" stroke="#E8A020" stroke-dasharray="73.61 26.29" stroke-dashoffset="-48.61" stroke-width="3.2"></circle>
+<text fill="var(--navy)" font-size="6" font-weight="700" text-anchor="middle" x="18" y="20">26,3%</text>
+<text fill="#888" font-size="3.3" text-anchor="middle" x="18" y="25">transfo.</text>
+</svg>
+<div style="display:flex;flex-direction:column;gap:7px;flex:1;"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;">
+<div style="display:flex;align-items:center;gap:6px;color:var(--gray-dk);"><div style="width:10px;height:10px;border-radius:50%;background:#27AE60;flex-shrink:0;"></div>Validé</div>
+<div style="font-weight:600;color:var(--navy);">5 devis <span style="color:var(--gray-mid);font-weight:400;">26,3%</span></div>
+</div><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;">
+<div style="display:flex;align-items:center;gap:6px;color:var(--gray-dk);"><div style="width:10px;height:10px;border-radius:50%;background:#E8A020;flex-shrink:0;"></div>En cours</div>
+<div style="font-weight:600;color:var(--navy);">14 devis <span style="color:var(--gray-mid);font-weight:400;">73,7%</span></div>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);margin-top:4px;">Base : 19 devis émis — calcul au nombre.</div>
+</div>
+</div>
+</div></div>
+<div id="devisAlerts"><div style="margin-bottom:14px;"><div class="al al-r" style="margin-bottom:6px;cursor:default;"><div class="al-dot dot-r"></div><div class="al-txt"><span class="al-p">1 devis sans correspondance projet/AO : DCN-2026-18</span></div></div></div></div>
+<div id="devisTable"></div>
+</div>
+<div class="page" id="page-etablissement">
+<div class="etab-toolbar">
+<div class="fgrp"><label class="flbl">Année</label><select class="fs" id="etabYear" onchange="renderEtablissementPage()"><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="all">Toutes</option></select></div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" data-ready="1" id="etabResp" onchange="renderEtablissementPage()"><option value="">Tous</option><option>Akli</option><option>Jean</option><option>Khellaf</option><option>Mandiaye</option></select></div>
+<div class="fgrp"><label class="flbl">Agence</label><select class="fs" data-ready="1" id="etabAgence" onchange="renderEtablissementPage()"><option value="">Toutes</option><option>ANDRE BTP - Secteur Rehabilitation</option><option>Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF</option><option>Branche Construction — DB GENIE CIVIL — Direction Déléguée France</option><option>Branche Construction — Infra GC — DB CONSTRUCTION</option><option>Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire</option><option>Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains</option><option>Bâtiment — ANDRE BTP — Pilotage Grands Projets</option><option>Bâtiment — DB BATIMENT ILE-DE-FRANCE</option><option>Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles</option><option>Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés</option><option>Bâtiment — DB BATIMENT SUD-EST</option><option>Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie</option><option>Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain</option><option>Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique</option><option>Bâtiment — DB CONSTRUCTION NORD — Agence Nord</option><option>Bâtiment — DB CONSTRUCTION SUD-OUEST</option><option>Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine</option><option>Bâtiment — DB CONSTRUCTION — Agence Lorraine</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée</option><option>Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul</option><option>Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST</option><option>DB BATIMENT IDF - Agence EPP</option><option>DB BATIMENT IDF - Agence Habitat</option><option>DB BATIMENT IDF - Agence Rehabilitation</option><option>DB BATIMENT SUD-EST - Agence Pole Metropolitain</option><option>DB BATIMENT SUD-EST - Industrie</option><option>DB CONSTRUCTION - Est - Champagne</option><option>DB CONSTRUCTION - Est - Lorraine (Metz)</option><option>DB CONSTRUCTION - Est - Lorraine (Nancy)</option><option>DB CONSTRUCTION - Grand EST</option><option>DB CONSTRUCTION - Nord - Marcq-en-Baroeul</option><option>DB CONSTRUCTION SUD-OUEST - Agence Occitanie</option><option>DB GC IDF &amp; France Ouest</option><option>DB GENIE CIVIL - Agence IDF</option><option>DB GENIE CIVIL - Dir. Deleguee France</option><option>DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</option><option>DB GENIE CIVIL - Nucleaire</option><option>DB IMMO IDF - Agence Tertiaire</option><option>Mersch &amp; Schmitz</option></select></div>
+<div class="fgrp"><label class="flbl">Statut</label><select class="fs" id="etabStatus" onchange="renderEtablissementPage()"><option value="">Tous statuts</option><option value="Actif">Actif</option><option value="À relancer">À relancer</option><option value="Dormant">Dormant</option><option value="Jamais travaillé">Jamais travaillé</option><option value="Prospect">Prospect</option></select></div>
+<button class="btn btn-outline" onclick="exportEtablissementCSV()">Exporter CSV</button>
+</div>
+<div class="etab-kpis" id="etabKpis"></div>
+<div class="etab-top-wrap" id="etabTopCard"></div>
+<div class="etab-grid-main">
+<div class="card"><div class="ch"><span class="ct" id="etabBarTitle">CA par établissement (2026)</span><span style="font-size:10px;color:var(--gray-dk);">Projets + établissements sans projet</span></div><div class="cb"><div class="etab-chart-box"><canvas height="220" id="chartEtabCA" width="640"></canvas></div></div></div>
+<div class="card"><div class="ch"><span class="ct">Évolution du CA par établissement</span></div><div class="cb"><div class="etab-chart-box"><canvas height="220" id="chartEtabEvolution" width="640"></canvas></div></div></div>
+</div>
+<div class="etab-grid-3">
+<div class="card"><div class="ch"><span class="ct">Nombre de projets par établissement</span></div><div class="cb"><div class="etab-chart-box"><canvas height="220" id="chartEtabProjects" width="640"></canvas></div></div></div>
+<div class="card"><div class="ch"><span class="ct">Répartition du CA par statut</span></div><div class="cb"><div class="etab-chart-box"><canvas height="220" id="chartEtabStatus" width="640"></canvas></div></div></div>
+<div class="card"><div class="ch"><span class="ct">Évolution globale du CA</span></div><div class="cb"><div class="etab-chart-box"><canvas height="220" id="chartEtabGlobal" width="640"></canvas></div></div></div>
+</div>
+<div class="card">
+<div class="ch"><span class="ct">Détail par établissement</span><span id="etabCount" style="font-size:11px;color:var(--gray-dk);">46 établissement(s) affiché(s) · 22 sans projet</span></div>
+<div class="tw"><table><thead><tr><th>Établissement</th><th>Nb projets 2024</th><th>CA 2024</th><th>Nb projets 2025</th><th>CA 2025</th><th>Nb projets 2026</th><th>CA 2026</th><th>Évolution 25 → 26</th><th>AO en cours</th><th>Responsable principal</th><th>Statut</th></tr></thead><tbody id="tbEtablissements"></tbody></table></div>
+</div>
+</div>
+<div class="page" id="page-commercial">
+<div class="sbar">
+<input class="fi" id="srchCom" oninput="renderCommercialPage()" placeholder="Rechercher agence / contact..." style="max-width:250px;"/>
+<select class="fs" id="filtComStatus" onchange="renderCommercialPage()">
+<option value="">Tous statuts</option>
+<option value="Jamais contacte">Jamais contacté</option>
+<option value="A contacter">À contacter</option>
+<option value="Prospect en cours">Prospect en cours</option>
+<option value="Actif">Actif</option>
+<option value="Dormant">Dormant</option>
+<option value="Sans suite">Sans suite</option>
+</select>
+<select class="fs" id="filtComPriority" onchange="renderCommercialPage()">
+<option value="">Toutes priorités</option>
+<option>Haute</option>
+<option>Moyenne</option>
+<option>Basse</option>
+</select>
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;">
+<input id="onlyNever" onchange="renderCommercialPage()" type="checkbox"/> Seulement jamais contactés
+      </label>
+<div style="margin-left:auto"><button class="btn btn-primary" onclick="openCommercialModal()">+ Nouvelle fiche</button></div>
+</div>
+<div class="kgrid" id="commercialKpis" style="grid-template-columns:repeat(4,1fr);"></div>
+<div class="card">
+<div class="tw">
+<div id="tbCommercial" style="padding:12px;"><div class="comm-section-hdr csh-jamais">Jamais contactés — priorité absolue (6)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-jamais" onclick="editCommercial('c12')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB BATIMENT IDF - Agence Habitat</div>
+<div class="cnote">Pas encore contacte - a aller voir</div>
+</div>
+<div class="cc">
+<span class="badge br">Jamais contacte</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c12')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c12')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-jamais" onclick="editCommercial('c13')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB BATIMENT IDF - Agence Rehabilitation</div>
+<div class="cnote">Pas encore contacte - a aller voir</div>
+</div>
+<div class="cc">
+<span class="badge br">Jamais contacte</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c13')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c13')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-jamais" onclick="editCommercial('c14')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Grand Est · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB CONSTRUCTION - Est - Lorraine (Nancy)</div>
+<div class="cnote">Pas encore contacte - a aller voir</div>
+</div>
+<div class="cc">
+<span class="badge br">Jamais contacte</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c14')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c14')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-jamais" onclick="editCommercial('c15')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Sud-Ouest · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB CONSTRUCTION SUD-OUEST - Agence Occitanie</div>
+<div class="cnote">Pas encore contacte - a aller voir</div>
+</div>
+<div class="cc">
+<span class="badge br">Jamais contacte</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c15')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c15')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-jamais" onclick="editCommercial('c16')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB IMMO IDF - Agence Tertiaire</div>
+<div class="cnote">Fort potentiel BIM - jamais approche</div>
+</div>
+<div class="cc">
+<span class="badge br">Jamais contacte</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c16')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c16')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-jamais" onclick="editCommercial('c17')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">France · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</div>
+<div class="cnote">Grands projets - fort potentiel</div>
+</div>
+<div class="cc">
+<span class="badge br">Jamais contacte</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c17')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c17')">x</button>
+</div>
+</div>
+</div></div><div class="comm-section-hdr csh-dormant">Dormants — à relancer (2)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-dormant" onclick="editCommercial('c10')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Nord · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB CONSTRUCTION - Nord - Marcq-en-Baroeul</div>
+<div class="cnote">Maubeuge cloture - relancer</div>
+</div>
+<div class="cc">
+<span class="badge bac">Dormant</span>
+<span class="act-pill act-relancer">🔔 Relancer</span>
+<span style="font-size:10px;color:var(--blue);">📅 01/05/2026</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c10')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c10')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-dormant" onclick="editCommercial('c11')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Pays de la Loire · Prio <span style="color:var(--orange);">Moyenne</span></div>
+<div class="cn">ANDRE BTP - Secteur Rehabilitation</div>
+<div class="cnote">A deja travaille avec DCN - relancer</div>
+</div>
+<div class="cc">
+<span class="badge bac">Dormant</span>
+<span class="act-pill act-relancer">🔔 Relancer</span>
+<span style="font-size:10px;color:var(--blue);">📅 15/05/2026</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c11')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c11')">x</button>
+</div>
+</div>
+</div></div><div class="comm-section-hdr csh-prospect">Prospects en cours (1)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-prospect" onclick="editCommercial('c_1777383370529_uhbez')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Luxembourg · Prio <span style="color:var(--orange);">Moyenne</span></div>
+<div class="cn">Mersch &amp; Schmitz</div>
+<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Bruno Lorrain — Directeur des services fonctionnels</div>
+<div style="font-size:10.5px;color:var(--gray-dk);">✉ b.lorrain@Mersch-Schmitz.lu · +352 621 773 918</div>
+<div class="cnote">Avons fait une réunion avec le directeur d'exploitation et les responsables du BE pour faciliter app...</div>
+</div>
+<div class="cc">
+<span class="badge bb">Prospect en cours</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c_1777383370529_uhbez')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c_1777383370529_uhbez')">x</button>
+</div>
+</div>
+</div></div><div class="comm-section-hdr csh-actif">Clients actifs (9)</div><div class="comm-grid" style="margin-bottom:10px;"><div class="comm-card cs-actif" onclick="editCommercial('c1')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Ile-de-France · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB BATIMENT IDF - Agence EPP</div>
+<div class="cnote">Client regulier - SNCF Pantin, Piscine Bagnolet, INRIA</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c1')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c1')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c2')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Grand Est · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB CONSTRUCTION - Est - Champagne</div>
+<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Vincent</div>
+<div class="cnote">Appeler Vincent - West Pharma Revamp en attente</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-appeler">📞 Appeler</span>
+<span style="font-size:10px;color:var(--blue);">📅 25/04/2026</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c2')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c2')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c3')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Grand Est · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB CONSTRUCTION - Est - Lorraine (Metz)</div>
+<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Isabelle KORNATZ — Directrice de Projets Etudes</div>
+<div class="cnote">EPSM Metz-Jury en cours</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c3')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c3')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c4')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF / France · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB GENIE CIVIL - Dir. Deleguee France</div>
+<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Clement LAYRAC — Ingenieur etudes</div>
+<div class="cnote">Gare Satory + PCH Caderousse en cours</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c4')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c4')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c5')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">France · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB GENIE CIVIL - Nucleaire</div>
+<div class="cnote">EPR2 en suivi strategique</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c5')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c5')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c6')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB GENIE CIVIL - Agence IDF</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c6')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c6')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c7')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">IDF / Ouest · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB GC IDF &amp; France Ouest</div>
+<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Bastien CLEMENT — Ingenieur Etudes de Prix</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c7')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c7')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c8')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">SUD-EST · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB BATIMENT SUD-EST - Industrie</div>
+<div style="font-size:11px;color:var(--blue);margin-top:3px;">👤 Jonathan CHARAMELET — Chef de groupe</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c8')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c8')">x</button>
+</div>
+</div>
+</div><div class="comm-card cs-actif" onclick="editCommercial('c9')">
+<div>
+<div style="font-size:10px;color:var(--gray-dk);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">SUD-EST · Prio <span style="color:var(--red);">Haute</span></div>
+<div class="cn">DB BATIMENT SUD-EST - Agence Pole Metropolitain</div>
+</div>
+<div class="cc">
+<span class="badge bg">Actif</span>
+<span class="act-pill act-rien">✓ Rien</span>
+<div style="display:flex;gap:4px;margin-top:4px;">
+<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editCommercial('c9')">Edit.</button>
+<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteCommercial('c9')">x</button>
+</div>
+</div>
+</div></div></div>
+</div>
+</div>
+</div>
+<div class="page" id="page-previsions">
+<div class="sbar">
+<input class="fi" id="srchForecast" oninput="renderPrevisionsPage()" placeholder="Rechercher un projet..." style="max-width:240px;"/>
+<select class="fs" id="filtForecastResp" onchange="renderPrevisionsPage()"></select>
+<select class="fs" id="filtForecastStatus" onchange="renderPrevisionsPage()"><option value="">Projets en cours</option></select>
+<div style="margin-left:auto;display:flex;gap:8px;">
+<button class="btn btn-accent sf-auto-btn" id="btnForecastAutoEmpty" onclick="completeEmptySmartForecasts()">✨ Compléter les prévisions vides</button>
+<button class="btn btn-outline" onclick="renderPrevisionsPage()">Actualiser</button>
+</div>
+</div>
+<div class="kgrid" id="forecastKpis" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px;"></div>
+<div class="card" style="margin-bottom:14px;">
+<div class="ch"><span class="ct">Prévisions facturation 2026</span><span id="forecastCount">28 projet(s)</span></div>
+<div class="cb" style="padding:10px 16px 0 16px;">
+<div class="charge-legend">
+<span class="chip"><span class="charge-dot" style="background:#2563EB"></span>Projet en cours</span>
+<span class="chip"><span class="charge-dot" style="background:#F59E0B"></span>Projet basculé AO</span>
+<span class="chip"><span class="charge-dot" style="background:#DBEAFE"></span>Cellule renseignée</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 5px; padding: 5px 0px 4px; flex-wrap: wrap;"><button class="dcn-nav-btn">◀ Préc.</button><button class="dcn-nav-btn">Suiv. ▶</button><span class="dcn-nav-hint">(ou glisser)</span></div><div class="tw" data-dcn-nav="1"><table class="forecast-table">
+<thead><tr>
+<th>Projet</th><th>N° Devis</th><th>Statut</th><th>Resp.</th><th class="col-years-prev">Avant 2026</th>
+<th>Jan</th><th>Fev</th><th>Mar</th><th>Avr</th><th>Mai</th><th>Juin</th><th>Juil</th><th>Aou</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+<th>Total 2026</th><th class="col-years-next">Après 2026</th><th>Contrôle</th><th style="text-align:center;width:52px;">🔔</th><th>Actions</th>
+</tr></thead>
+<tbody id="tbForecast"></tbody>
+</table></div>
+</div>
+<div class="card">
+<div class="ch"><span class="ct">Portefeuille 2026 par mois</span></div>
+<div class="cb"><div class="chart-box"><canvas height="220" id="chartForecast" width="3115"></canvas></div><div class="chart-metrics" id="chartForecastSummary"></div></div>
+</div></div><div class="page" id="page-facturation">
+<div style="display:flex;gap:8px;margin-bottom:12px;justify-content:flex-end;"><button class="btn btn-primary" onclick="openFactureModal()">+ Nouvelle facture</button></div>
+<div class="kgrid" id="factKpis" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px;"></div>
+<div class="card"><div class="tw"><table><thead><tr><th>Projet</th><th>N° facture</th><th>Émission</th><th>Montant HT</th><th>Échéance</th><th>Encaissement</th><th>Statut</th><th>Retard</th><th></th></tr></thead><tbody id="tbF"></tbody></table></div></div>
+</div>
+<div class="page" id="page-config">
+<div class="g2">
+<div class="card"><div class="ch"><span class="ct">Membres de l'équipe</span></div><div class="cb"><table><thead><tr><th>Nom</th><th>Rôle</th><th>Capacité</th><th>Statut</th><th></th></tr></thead><tbody id="tbMembers"></tbody></table><div style="margin-top:10px;display:flex;gap:6px;"><input class="fi" id="newMemberName" placeholder="Nouveau collaborateur" style="flex:1;"/><input class="fi" id="newMemberRole" placeholder="Rôle" style="flex:1;"/><button class="btn btn-primary btn-sm" onclick="addMember()">Ajouter</button></div></div></div>
+<div class="card"><div class="ch"><span class="ct">Paramètres globaux</span></div><div class="cb" style="display:flex;flex-direction:column;gap:10px;">
+<div class="fgrp"><label class="flbl">Nom du service</label><input class="fi" id="cfgServiceName" placeholder="Ex : DCN Île-de-France"/></div>
+<div class="fgrp"><label class="flbl">Année de suivi</label><input class="fi" id="cfgYear" type="number"/></div>
+<div class="fgrp"><label class="flbl">Seuil charge haute (%)</label><input class="fi" id="cfgHigh" type="number"/></div>
+<div class="fgrp"><label class="flbl">Seuil charge basse (%)</label><input class="fi" id="cfgLow" type="number"/></div>
+<div class="fgrp"><label class="flbl">Devise</label><input class="fi" id="cfgCurrency"/></div>
+<div style="display:flex;gap:8px;">
+<button class="btn btn-primary btn-sm" onclick="saveCfg()">Sauvegarder</button>
+<button class="btn btn-outline btn-sm" onclick="resetData()">Réinitialiser</button>
+</div>
+</div></div>
+</div>
+</div>
+</main>
+<!-- MODAL PROJECT -->
+<div class="ov" id="mProject"><div class="modal project-edit-modal">
+<div class="mh"><span class="mt" id="mProjectTitle">Éditer projet</span><button class="mx" onclick="closeM('mProject')">x</button></div>
+<div class="mb"><div class="fg"><div class="project-edit-hero" id="projectEditHero"><div class="project-edit-hero-label">Projet en édition</div><div class="project-edit-hero-title" id="projectEditHeroTitle">DISNEY PONGO K1 — Centre de Secours</div><div class="project-edit-hero-sub" id="projectEditHeroSub">DBIM-0034 · A venir · DISNEY</div></div>
+<div class="sdiv psec-title identity">🔵 Identité du projet</div>
+<div class="fgrp"><label class="flbl">Code projet</label><input class="fi" data-hero-bound="1" id="prCode" placeholder="DBIM-XXXX"/></div>
+<div class="fgrp"><label class="flbl">Statut</label>
+<select class="fs" data-hero-bound="1" id="prStatus"><option>En cours</option><option>A venir</option><option>Solde</option><option>Termine</option><option>En attente</option><option>A renseigner</option><option>Suspendu</option></select>
+</div>
+<div class="fgrp" style="display:flex;flex-direction:column;gap:6px;">
+<label class="flbl">Plan de charge</label>
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:#F8FAFC;">
+<input id="prChargeActif" style="width:15px;height:15px;accent-color:var(--blue);" type="checkbox"/>
+<span style="font-size:12px;color:var(--navy);">Inclure dans le plan de charge</span>
+</label>
+<div class="hint-inline" id="prChargeActifHint" style="color:var(--gray-dk);font-size:10px;">Cocher même si le projet est soldé ou terminé financièrement, si du travail reste à faire.</div>
+</div>
+<div class="fgrp" style="display:flex;flex-direction:column;gap:6px;">
+<label class="flbl">Prévisions de facturation</label>
+<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:#F8FAFC;">
+<input id="prInclurePrevision" style="width:15px;height:15px;accent-color:var(--blue);" type="checkbox"/>
+<span style="font-size:12px;color:var(--navy);">Inclure dans les prévisions de facturation</span>
+</label>
+<div class="hint-inline" style="color:var(--gray-dk);font-size:10px;">Force l'inclusion dans l'onglet Prévisions même si le projet est terminé, soldé ou suspendu.</div>
+</div>
+<div class="fgrp" style="display:flex;flex-direction:column;gap:6px;">
+<label class="flbl">Mode de facturation</label>
+<select class="fs" id="prBillingMode">
+<option value="forfait">Forfait</option>
+<option value="regie">Régie</option>
+</select>
+<div class="hint-inline" style="color:var(--gray-dk);font-size:10px;">En Régie, le projet reste visible dans Prévisions même si son statut n’est pas “En cours”.</div>
+</div>
+<div class="fgrp ff"><label class="flbl">Nom du projet *</label><input class="fi" data-hero-bound="1" id="prName"/></div>
+<div class="fgrp"><label class="flbl">Nature</label><select class="fs" id="prNature"><option>Mission directe</option><option>Aide a l AO</option></select></div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="prResp"><option>Khellaf</option><option>Akli</option><option>Jean</option><option selected="">Mandiaye</option></select></div>
+<div class="fgrp"><label class="flbl">Client / MOA</label><input class="fi" data-hero-bound="1" id="prClient"/></div>
+<div class="fgrp ff"><label class="flbl">Établissement DB</label>
+<select class="fs fi-combo" id="prAgency" onchange="onAgencySelect('prAgency','prAgencyBadge')"><option value="">— Sélectionner un établissement —</option><option value="ANDRE BTP - Secteur Rehabilitation">ANDRE BTP - Secteur Rehabilitation</option><option value="Bâtiment — ANDRE BTP — Pilotage Grands Projets">Bâtiment — ANDRE BTP — Pilotage Grands Projets</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE">Bâtiment — DB BATIMENT ILE-DE-FRANCE</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés</option><option value="Bâtiment — DB BATIMENT SUD-EST">Bâtiment — DB BATIMENT SUD-EST</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie">Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain">Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain</option><option value="Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique">Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique</option><option value="Bâtiment — DB CONSTRUCTION — Agence Lorraine">Bâtiment — DB CONSTRUCTION — Agence Lorraine</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul">Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul</option><option selected="" value="Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST">Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST</option><option value="Bâtiment — DB CONSTRUCTION NORD — Agence Nord">Bâtiment — DB CONSTRUCTION NORD — Agence Nord</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST">Bâtiment — DB CONSTRUCTION SUD-OUEST</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine">Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine</option><option value="Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF">Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF</option><option value="Branche Construction — DB GENIE CIVIL — Direction Déléguée France">Branche Construction — DB GENIE CIVIL — Direction Déléguée France</option><option value="Branche Construction — Infra GC — DB CONSTRUCTION">Branche Construction — Infra GC — DB CONSTRUCTION</option><option value="Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST">Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud">Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains</option><option value="DB BATIMENT IDF - Agence EPP">DB BATIMENT IDF - Agence EPP</option><option value="DB BATIMENT IDF - Agence Habitat">DB BATIMENT IDF - Agence Habitat</option><option value="DB BATIMENT IDF - Agence Rehabilitation">DB BATIMENT IDF - Agence Rehabilitation</option><option value="DB BATIMENT SUD-EST - Agence Pole Metropolitain">DB BATIMENT SUD-EST - Agence Pole Metropolitain</option><option value="DB BATIMENT SUD-EST - Industrie">DB BATIMENT SUD-EST - Industrie</option><option value="DB CONSTRUCTION - Est - Champagne">DB CONSTRUCTION - Est - Champagne</option><option value="DB CONSTRUCTION - Est - Lorraine (Metz)">DB CONSTRUCTION - Est - Lorraine (Metz)</option><option value="DB CONSTRUCTION - Est - Lorraine (Nancy)">DB CONSTRUCTION - Est - Lorraine (Nancy)</option><option value="DB CONSTRUCTION - Grand EST">DB CONSTRUCTION - Grand EST</option><option value="DB CONSTRUCTION - Nord - Marcq-en-Baroeul">DB CONSTRUCTION - Nord - Marcq-en-Baroeul</option><option value="DB CONSTRUCTION SUD-OUEST - Agence Occitanie">DB CONSTRUCTION SUD-OUEST - Agence Occitanie</option><option value="DB GC IDF &amp; France Ouest">DB GC IDF &amp; France Ouest</option><option value="DB GENIE CIVIL - Agence IDF">DB GENIE CIVIL - Agence IDF</option><option value="DB GENIE CIVIL - Dir. Deleguee France">DB GENIE CIVIL - Dir. Deleguee France</option><option value="DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs">DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</option><option value="DB GENIE CIVIL - Nucleaire">DB GENIE CIVIL - Nucleaire</option><option value="DB IMMO IDF - Agence Tertiaire">DB IMMO IDF - Agence Tertiaire</option><option value="Mersch &amp; Schmitz">Mersch &amp; Schmitz</option><option value="__custom__">✎ Autre (saisir librement)...</option></select>
+<div style="margin-top:4px;display:flex;gap:6px;align-items:center;">
+<input class="fi" id="prAgencyCustom" oninput="onAgencyCustom('prAgency','prAgencyCustom')" placeholder="Ou saisir librement..." style="flex: 1 1 0%; font-size: 11px; display: none;"/>
+<button class="btn btn-outline btn-sm" onclick="toggleAgencyCustom('prAgencyCustom')" style="white-space:nowrap;" type="button">✎ Saisie libre</button>
+</div>
+<div class="etab-badge" id="prAgencyBadge" style="background: var(--green);">Suivi commercial : Actif · 👤 Clement LAYRAC</div>
+</div>
+<div class="fgrp"><label class="flbl">N° Devis</label>
+<input class="fi" id="prDevis" oninput="checkDevisDuplicate(this.value,'prDevisHint',editProjectId)" placeholder="DCN-2026-XX"/>
+<div class="devis-hint ok" id="prDevisHint">✓ Numéro disponible</div>
+</div>
+<div class="fgrp"><label class="flbl">Date debut</label><input class="fi" id="prStart" type="date"/></div>
+<div class="fgrp"><label class="flbl">Date fin</label><input class="fi" id="prEnd" type="date"/></div>
+<div class="sdiv psec-title finance">💚 Finances, missions &amp; facturation</div>
+<div class="ff mission-grid" id="projectMissionGrid"></div>
+<div class="sdiv psec-title finance">💚 Finances, missions &amp; facturation</div>
+<div class="fgrp"><label class="flbl">CA années précédentes</label><input class="fi" id="prCaPrev" oninput="updateCAHint('pr')" type="number"/></div>
+<div class="fgrp"><label class="flbl">CA année en cours</label><input class="fi" id="prCaCurrent" oninput="updateCAHint('pr')" type="number"/></div>
+<div class="fgrp"><label class="flbl">CA années suivantes</label><input class="fi" id="prCaNext" oninput="updateCAHint('pr')" type="number"/></div>
+<div class="fgrp"><label class="flbl">Répartition</label><button class="btn btn-outline btn-sm" onclick="autoSplitCA('pr')" type="button">Répartir automatiquement</button><div class="hint-inline" id="prCaHint"><div>Total missions : <strong>55 000 €</strong>  |  Répartition : <strong>55 000 €</strong>
+<br/><span style="color:var(--green)">✓ Répartition cohérente</span>
+<br/>CA 2026 représente <strong>71%</strong> du total
+  </div></div></div>
+<div class="fgrp"><label class="flbl">Montant facturé</label><input class="fi" id="prBilled" type="number"/></div>
+<div class="fgrp"><label class="flbl">Avancement (%)</label><input class="fi" id="prProgress" max="100" min="0" type="number"/></div>
+<div class="sdiv psec-title actors ff" id="dcnProjectActorsTitle">🟣 Acteurs du projet</div><div class="ff" id="dcnActeursWrap" style="background: rgb(248, 250, 252); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; display: block;">
+<div id="dcnActeursList"><div style="font-size:11px;color:var(--gray-dk);font-style:italic;padding:4px 0;">Aucun acteur ajouté — le responsable principal sera celui sélectionné ci-dessus.</div></div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+<select class="fs" id="dcnActeurMembre" style="flex:1;min-width:110px;font-size:12px;"><option value="m1">Khellaf — BIM Manager </option><option value="m2">Akli — Coordinateur BIM </option><option value="m3">Jean — Synthese </option><option value="m_1776784381130_xfl6f">Mandiaye — Directeur Construction Numérique </option></select>
+<select class="fs" id="dcnActeurRole" style="flex:1;min-width:100px;font-size:12px;"><option>Chef de projet</option><option>Second</option><option>Contributeur</option><option>Support</option></select>
+<button class="btn btn-outline btn-sm" onclick="dcnAddActeur()" type="button">+ Ajouter</button>
+</div>
+<div style="font-size:10px;color:var(--gray-dk);margin-top:5px;">Le 1er acteur ajouté devient le responsable principal.</div>
+</div><div class="sdiv psec-title contact">🟠 Contact client</div>
+<div class="fgrp"><label class="flbl">Nom</label><input class="fi" id="prContactNom"/></div>
+<div class="fgrp"><label class="flbl">Prenom</label><input class="fi" id="prContactPrenom"/></div>
+<div class="fgrp"><label class="flbl">Fonction</label><input class="fi" id="prContactFonction"/></div>
+<div class="fgrp"><label class="flbl">Mail</label><input class="fi" id="prContactMail" type="email"/></div>
+<div class="fgrp"><label class="flbl">Tel</label><input class="fi" id="prContactTel"/></div>
+<div class="sdiv psec-title notes ff">🔴 Notes &amp; alertes</div>
+<div class="sdiv ff psec-title actors" style="display: none;">🟣 Acteurs du projet</div>
+<div class="sdiv psec-title notes ff" id="dcnProjectNotesTitle">🔴 Notes &amp; alertes</div><div class="fgrp ff project-note-card" style="display: flex;"><label class="flbl">Notes libres</label><textarea class="fta" id="prNotes" placeholder="Notes libres, alertes, points de vigilance…" style="min-height: 110px;"></textarea></div></div></div>
+<div class="mf action-row"><button class="btn btn-outline" onclick="closeM('mProject')">Annuler</button><button class="btn btn-outline" id="btnProjectSheetFromEdit" onclick="openProjectSheetFromEdit()" style="display: inline-flex;">Fiche projet</button><button class="btn btn-accent" id="btnProjectToAo" onclick="revertProjectToAo(editProjectId)" style="display: inline-flex;">Rebasculer en AO</button><button class="btn btn-primary" onclick="saveProject()">Enregistrer</button></div>
+</div></div>
+<!-- MODAL AO -->
+<div class="ov" id="mAo"><div class="modal ao-edit-modal">
+<div class="mh"><span class="mt" id="mAoTitle">Editer AO</span><button class="mx" onclick="closeM('mAo')">×</button></div>
+<div class="mb"><div class="fg">
+<div class="ao-hero-edit" id="aoEditHero">
+<div class="ao-hero-kicker" id="aoHeroKicker">AO EN ÉDITION</div>
+<div class="ao-hero-name" id="aoHeroName">PARIS 9E — RÉHABILITATION BUREAUX</div>
+<div class="ao-hero-meta">
+<span id="aoHeroClient">Client : REAL FR HAUSSMANN SAS c/o PIMCO Prime Real Estate GmbH</span>
+<span id="aoHeroDevis">Devis : —</span>
+<span id="aoHeroPhase">Phase : Qualification</span>
+<span id="aoHeroProb">Probabilité : 50%</span>
+<span id="aoHeroDate">Date réponse : —</span>
+</div>
+</div>
+<div class="ao-section-title ident">🟠 1. Identification AO</div>
+<div class="fgrp ff"><label class="flbl">Nom opportunité <span>*</span></label><input class="fi" id="aoName" oninput="updateAoHero()"/></div>
+<div class="fgrp"><label class="flbl">Client</label><input class="fi" id="aoClient" oninput="updateAoHero()"/></div>
+<div class="fgrp"><label class="flbl">Établissement DB</label>
+<select class="fs fi-combo" id="aoAgency" onchange="onAgencySelect('aoAgency','aoAgencyBadge')"><option value="">— Sélectionner un établissement —</option><option value="ANDRE BTP - Secteur Rehabilitation">ANDRE BTP - Secteur Rehabilitation</option><option value="Bâtiment — ANDRE BTP — Pilotage Grands Projets">Bâtiment — ANDRE BTP — Pilotage Grands Projets</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE">Bâtiment — DB BATIMENT ILE-DE-FRANCE</option><option value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipement Constructions Industrielles</option><option selected="" value="Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés">Bâtiment — DB BATIMENT ILE-DE-FRANCE — Agence Equipements Publics Privés</option><option value="Bâtiment — DB BATIMENT SUD-EST">Bâtiment — DB BATIMENT SUD-EST</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie">Bâtiment — DB BATIMENT SUD-EST — Agence Bâtiment Industrie</option><option value="Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain">Bâtiment — DB BATIMENT SUD-EST — Agence Pôle Métropolitain</option><option value="Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique">Bâtiment — DB BÂTIMENT SUD-OUEST — Direction Technique</option><option value="Bâtiment — DB CONSTRUCTION — Agence Lorraine">Bâtiment — DB CONSTRUCTION — Agence Lorraine</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Alsace</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Champagne</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Lorraine (Metz)</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée">Bâtiment — DB CONSTRUCTION — Dir. Rég. Est — Agence Marne-la-Vallée</option><option value="Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul">Bâtiment — DB CONSTRUCTION — Dir. Rég. Nord — Agence Marcq-en-Baroeul</option><option value="Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST">Bâtiment — DB CONSTRUCTION — Direction Régionale Grand EST</option><option value="Bâtiment — DB CONSTRUCTION NORD — Agence Nord">Bâtiment — DB CONSTRUCTION NORD — Agence Nord</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST">Bâtiment — DB CONSTRUCTION SUD-OUEST</option><option value="Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine">Bâtiment — DB CONSTRUCTION SUD-OUEST — Agence Aquitaine</option><option value="Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF">Branche Construction - Infra GC — DB GENIE CIVIL — Dir. Déléguée France — Agence IDF</option><option value="Branche Construction — DB GENIE CIVIL — Direction Déléguée France">Branche Construction — DB GENIE CIVIL — Direction Déléguée France</option><option value="Branche Construction — Infra GC — DB CONSTRUCTION">Branche Construction — Infra GC — DB CONSTRUCTION</option><option value="Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST">Branche Construction — Infra GC — DB GC ILE-DE-FRANCE &amp; FRANCE OUEST</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud">Branche Construction — Infra GC — DB GENIE CIVIL — Agence France Sud</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF">Branche Construction — Infra GC — DB GENIE CIVIL — Agence Infra GC-IDF</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Nucléaire</option><option value="Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains">Branche Construction — Infra GC — DB GENIE CIVIL — Dir. Déléguée Travaux Souterrains</option><option value="DB BATIMENT IDF - Agence EPP">DB BATIMENT IDF - Agence EPP</option><option value="DB BATIMENT IDF - Agence Habitat">DB BATIMENT IDF - Agence Habitat</option><option value="DB BATIMENT IDF - Agence Rehabilitation">DB BATIMENT IDF - Agence Rehabilitation</option><option value="DB BATIMENT SUD-EST - Agence Pole Metropolitain">DB BATIMENT SUD-EST - Agence Pole Metropolitain</option><option value="DB BATIMENT SUD-EST - Industrie">DB BATIMENT SUD-EST - Industrie</option><option value="DB CONSTRUCTION - Est - Champagne">DB CONSTRUCTION - Est - Champagne</option><option value="DB CONSTRUCTION - Est - Lorraine (Metz)">DB CONSTRUCTION - Est - Lorraine (Metz)</option><option value="DB CONSTRUCTION - Est - Lorraine (Nancy)">DB CONSTRUCTION - Est - Lorraine (Nancy)</option><option value="DB CONSTRUCTION - Grand EST">DB CONSTRUCTION - Grand EST</option><option value="DB CONSTRUCTION - Nord - Marcq-en-Baroeul">DB CONSTRUCTION - Nord - Marcq-en-Baroeul</option><option value="DB CONSTRUCTION SUD-OUEST - Agence Occitanie">DB CONSTRUCTION SUD-OUEST - Agence Occitanie</option><option value="DB GC IDF &amp; France Ouest">DB GC IDF &amp; France Ouest</option><option value="DB GENIE CIVIL - Agence IDF">DB GENIE CIVIL - Agence IDF</option><option value="DB GENIE CIVIL - Dir. Deleguee France">DB GENIE CIVIL - Dir. Deleguee France</option><option value="DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs">DB GENIE CIVIL - Dir. Operationnelle Projets Majeurs</option><option value="DB GENIE CIVIL - Nucleaire">DB GENIE CIVIL - Nucleaire</option><option value="DB IMMO IDF - Agence Tertiaire">DB IMMO IDF - Agence Tertiaire</option><option value="Mersch &amp; Schmitz">Mersch &amp; Schmitz</option><option value="__custom__">✎ Autre (saisir librement)...</option></select>
+<input class="fi" id="aoAgencyCustom" oninput="onAgencyCustom('aoAgency','aoAgencyCustom')" placeholder="Ou saisir librement..." style="display:none;margin-top:4px;font-size:11px;"/>
+<div class="etab-badge" id="aoAgencyBadge"></div>
+</div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="aoResp"><option>Khellaf</option><option>Akli</option><option>Jean</option><option selected="">Mandiaye</option><option>Divers</option></select></div>
+<div class="fgrp"><label class="flbl">Nature</label><select class="fs" id="aoNature"><option>Mission directe</option><option>Aide à l'AO</option></select></div>
+<div class="fgrp"><label class="flbl">Date réponse</label><input class="fi" id="aoDate" oninput="updateAoHero()" type="date"/></div>
+<div class="fgrp"><label class="flbl">N° devis lié</label><input class="fi" id="aoDevis" oninput="checkDevisDuplicate(this.value,'aoDevisHint',editAoId);updateAoHero()" placeholder="DCN-2026-XX"/><div class="devis-hint" id="aoDevisHint"></div></div>
+<div class="fgrp"><label class="flbl">Date d'émission du devis</label><input class="fi" id="aoDevisDateEmission" type="date"/></div>
+<div class="ao-section-title pipe">🔵 2. Pipeline &amp; probabilité</div>
+<div class="fgrp"><label class="flbl">Phase</label><select class="fs" id="aoPhase" onchange="updateAoHero()"><option>Identification</option><option>Qualification</option><option>Offre déposée</option><option>Négociation</option><option>Attribution</option><option>Perdu</option></select></div>
+<div class="fgrp"><label class="flbl">Probabilité (%)</label><input class="fi" id="aoProb" max="100" min="0" oninput="updateAoHero()" type="number"/></div>
+<div class="fgrp"><label class="flbl">Type de suivi</label><select class="fs" id="aoFollowType"><option>AO formelle</option><option>Consultation directe</option><option>Relance commerciale</option><option>Devis en préparation</option></select></div>
+<div class="fgrp"><label class="flbl">Date prochaine action</label><input class="fi" id="aoNextActionDate" type="date"/></div>
+<div class="fgrp"><label class="flbl">Charge estimée (%) / mois</label><input class="fi" id="aoCharge" max="100" min="0" type="number"/></div>
+<div class="fgrp ff"><label class="flbl">Action à faire</label><input class="fi" id="aoAction"/></div>
+<div class="ao-section-title money">💚 3. Missions &amp; montant</div>
+<div class="ff mission-grid" id="aoMissionGrid"></div>
+<div class="fgrp"><label class="flbl">CA années précédentes</label><input class="fi" id="aoCaPrev" oninput="updateCAHint('ao')" type="number"/></div>
+<div class="fgrp"><label class="flbl">CA année en cours</label><input class="fi" id="aoCaCurrent" oninput="updateCAHint('ao')" type="number"/></div>
+<div class="fgrp"><label class="flbl">CA années suivantes</label><input class="fi" id="aoCaNext" oninput="updateCAHint('ao')" type="number"/></div>
+<div class="fgrp ao-total-box"><label class="flbl">Répartition</label><button class="btn btn-outline btn-sm" onclick="autoSplitCA('ao')" type="button">Répartir automatiquement</button><div class="hint-inline" id="aoCaHint"><div>Total missions : <strong>80 250 €</strong>  |  Répartition : <strong>0 €</strong>
+<br/><span style="color:var(--red);font-weight:600">⚠ Écart : -80 250 €</span>
+<br/>CA 2026 représente <strong>0%</strong> du total
+  </div></div></div>
+<div class="ao-section-title contact">🟣 4. Contact</div>
+<div class="fgrp"><label class="flbl">Contact nom</label><input class="fi" id="aoContactName"/></div>
+<div class="fgrp"><label class="flbl">Contact mail</label><input class="fi" id="aoContactMail"/></div>
+<div class="ao-section-title notes">🔴 5. Notes &amp; alertes</div>
+<div class="fgrp ff ao-note-card"><label class="flbl">Notes libres</label><textarea class="fta" id="aoNotes"></textarea></div>
+</div></div>
+<div class="mf action-row"><button class="btn btn-outline" onclick="closeM('mAo')">Annuler</button><button class="btn btn-accent" id="btnAoToProject" onclick="transformAo(editAoId)" style="display: inline-flex;">Transformer en projet</button><button class="btn btn-primary" onclick="saveAo()">Enregistrer</button></div>
+</div></div>
+<!-- MODAL COMMERCIAL -->
+<div class="ov" id="mCommercial"><div class="modal">
+<div class="mh"><span class="mt" id="mCommercialTitle">Editer fiche</span><button class="mx" onclick="closeM('mCommercial')">x</button></div>
+<div class="mb"><div class="fg">
+<div class="sdiv">Identification</div>
+<div class="fgrp"><label class="flbl">Agence DB *</label><select class="fs" id="coAgency"></select></div>
+<div class="fgrp"><label class="flbl">Region / Branche</label><input class="fi" id="coRegion"/></div>
+<div class="sdiv">Contact principal</div>
+<div class="fgrp"><label class="flbl">Nom</label><input class="fi" id="coContactNom"/></div>
+<div class="fgrp"><label class="flbl">Prenom</label><input class="fi" id="coContactPrenom"/></div>
+<div class="fgrp"><label class="flbl">Fonction</label><input class="fi" id="coFunction"/></div>
+<div class="fgrp"><label class="flbl">Mail</label><input class="fi" id="coContactMail" type="email"/></div>
+<div class="fgrp"><label class="flbl">Tel</label><input class="fi" id="coContactTel"/></div>
+<div class="sdiv">Pilotage commercial</div>
+<div class="fgrp"><label class="flbl">Statut relation</label>
+<select class="fs" id="coStatus"><option>Jamais contacte</option><option>A contacter</option><option>Prospect en cours</option><option>Actif</option><option>Dormant</option><option>Sans suite</option></select>
+</div>
+<div class="fgrp"><label class="flbl">Priorite</label><select class="fs" id="coPriority"><option>Haute</option><option>Moyenne</option><option>Basse</option></select></div>
+<div class="fgrp"><label class="flbl">Action a faire</label>
+<select class="fs" id="coAction"><option>Appeler</option><option>RDV a planifier</option><option>Envoyer presentation</option><option>Relancer</option><option>En attente retour</option><option>Rien</option></select>
+</div>
+<div class="fgrp"><label class="flbl">Derniere action</label><input class="fi" id="coLastAction"/></div>
+<div class="fgrp"><label class="flbl">Date derniere action</label><input class="fi" id="coLastDate" type="date"/></div>
+<div class="fgrp ff"><label class="flbl">Prochain RDV</label><input class="fi" id="coNextDate" type="date"/></div>
+<div class="fgrp ff"><label class="flbl">Note commerciale</label><textarea class="fta" id="coComment"></textarea></div>
+</div></div>
+<div class="mf"><button class="btn btn-outline" onclick="closeM('mCommercial')">Annuler</button><button class="btn btn-primary" onclick="saveCommercial()">Enregistrer</button></div>
+</div></div>
+<!-- MODAL FACTURE -->
+<div class="ov" id="mFacture"><div class="modal" style="max-width:520px;">
+<div class="mh"><span class="mt" id="mFactureTitle">Nouvelle facture</span><button class="mx" onclick="closeM('mFacture')">×</button></div>
+<div class="mb"><div class="fg">
+<div class="fgrp ff"><label class="flbl">Projet</label><select class="fs" id="faProject"></select></div>
+<div class="fgrp"><label class="flbl">N° facture</label><input class="fi" id="faNumber"/></div>
+<div class="fgrp"><label class="flbl">Date émission</label><input class="fi" id="faIssue" type="date"/></div>
+<div class="fgrp"><label class="flbl">Montant HT</label><input class="fi" id="faAmount" type="number"/></div>
+<div class="fgrp"><label class="flbl">Date échéance</label><input class="fi" id="faDue" type="date"/></div>
+<div class="fgrp"><label class="flbl">Date encaissement</label><input class="fi" id="faPaid" type="date"/></div>
+<div class="fgrp ff"><label class="flbl">Commentaire</label><textarea class="fta" id="faComment"></textarea></div>
+</div></div>
+<div class="mf"><button class="btn btn-outline" onclick="closeM('mFacture')">Annuler</button><button class="btn btn-primary" onclick="saveFacture()">Enregistrer</button></div>
+</div></div>
+<!-- MODAL DEVIS -->
+<div class="ov" id="mDevis"><div class="modal devis-edit-modal">
+<div class="mh"><span class="mt" id="mDevisTitle">Nouveau devis</span><button class="mx" onclick="closeM('mDevis')">×</button></div>
+<div class="mb"><div class="fg">
+<div class="devis-hero-edit" id="devisEditHero">
+<div class="devis-hero-kicker" id="dvHeroKicker">DEVIS EN ÉDITION</div>
+<div class="devis-hero-name" id="dvHeroName">NOUVEAU DEVIS</div>
+<div class="devis-hero-meta">
+<span id="dvHeroClient">Client : —</span>
+<span id="dvHeroNumero">N° : —</span>
+<span id="dvHeroStatut">Statut : Envoyé</span>
+<span id="dvHeroMontant">Montant : 0 €</span>
+</div>
+</div>
+<div class="devis-section-title ident" id="dvIdentificationTitle">🟠 1. Identification</div>
+<div class="fgrp ff" id="dvObjetGrp"><label class="flbl">Intitulé / objet <span>*</span></label><input class="fi" id="dvObjet" oninput="updateDevisHero()" placeholder="Intitulé du devis"/></div>
+<div class="fgrp" id="dvClientGrp"><label class="flbl">Client</label><input class="fi" id="dvClient" oninput="updateDevisHero()"/></div>
+<div class="fgrp ff" id="dvAgencyGrp"><label class="flbl">Établissement DB</label>
+<select class="fs fi-combo" id="dvAgency" onchange="onAgencySelect('dvAgency','dvAgencyBadge')"></select>
+<input class="fi" id="dvAgencyCustom" oninput="onAgencyCustom('dvAgency','dvAgencyCustom')" placeholder="Ou saisir librement..." style="display:none;margin-top:4px;font-size:11px;"/>
+<div class="etab-badge" id="dvAgencyBadge"></div>
+</div>
+<div class="fgrp"><label class="flbl">Responsable</label><select class="fs" id="dvResp"></select></div>
+<div class="devis-section-title info">🔵 2. Informations devis</div>
+<div class="fgrp"><label class="flbl">N° Devis <span>*</span></label><input class="fi" id="dvNumero" oninput="updateDevisHero()" placeholder="DCN-2026-XX"/></div>
+<div class="fgrp"><label class="flbl">Date d'émission</label><input class="fi" id="dvDateEmission" type="date"/></div>
+<div class="fgrp"><label class="flbl">Date réponse attendue</label><input class="fi" id="dvDateReponse" type="date"/></div>
+<div class="fgrp" id="dvStatutGrp"><label class="flbl">Statut</label>
+<select class="fs" id="dvStatut" onchange="updateDevisHero()">
+<option>Brouillon</option><option>Envoyé</option><option>Accepté</option>
+<option>En négociation</option><option>Refusé</option><option>Expiré</option>
+</select>
+</div>
+<div class="devis-section-title money" id="dvMissionsTitle">💚 3. Missions &amp; montant</div>
+<div class="ff mission-grid" id="devisMissionGrid"></div>
+<div class="fgrp ff devis-total-box" id="dvMontantGrp">
+<div><label class="flbl">Montant total HT (€)</label><div class="sub">Calculé automatiquement dès qu'une ventilation par mission est renseignée.</div></div>
+<input class="fi" id="dvMontant" min="0" oninput="updateDevisHero()" placeholder="0" style="max-width:190px;text-align:right;font-size:18px;font-weight:800;" type="number"/>
+</div>
+<div class="devis-section-title notes">🔴 4. Notes &amp; alertes</div>
+<div class="fgrp ff devis-note-card"><label class="flbl">Notes libres</label><textarea class="fta" id="dvNotes" rows="4"></textarea></div>
+</div></div>
+<div class="mf action-row"><button class="btn btn-outline" onclick="closeM('mDevis')">Annuler</button><button class="btn btn-primary" onclick="saveDevisEntry()">Enregistrer</button></div>
+</div></div>
+<div class="ov" id="projectSheetOv">
+<div class="project-sheet-modal">
+<div class="mh">
+<div class="mt">Fiche projet</div>
+<button class="mx" onclick="closeProjectSheet()">×</button>
+</div>
+<div class="mb" style="padding:12px 16px;border-bottom:1px solid var(--border);">
+<div class="project-sheet-actions">
+<button class="btn btn-accent" onclick="editCurrentProjectSheet();" style="font-weight:700;">✎ Éditer</button>
+<button class="btn btn-primary" onclick="downloadProjectSheetWord()">Télécharger Word</button>
+<button class="btn btn-outline" onclick="printProjectSheet()">Imprimer / PDF</button>
+<button class="btn btn-outline" onclick="closeProjectSheet()">Fermer</button>
+</div>
+</div>
+<div class="project-sheet-preview" id="projectSheetPreview"></div>
+</div>
+</div>
+<div class="" id="toast">Fichier sauvegardé : DCN_SUIVI_20260810_15h51.html</div>
+<script src="js/vendor/minichart.js"></script>
+<script src="js/app-core.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/ao.js"></script>
+<script src="js/commercial.js"></script>
+<script src="js/factures.js"></script>
+<script src="js/config.js"></script>
+<script src="js/exports.js"></script>
+<script src="js/forms.js"></script>
+<script src="js/project-sheet.js"></script>
+<script src="js/devis.js"></script>
+<script src="js/forecasts-import.js"></script>
+<!-- Modal confirmation -->
+<div class="ov" id="mConfirm" style="z-index:10000;">
+<div class="modal" style="max-width:440px;">
+<div class="mh"><span class="mt" id="mConfirmTitle">Rebasculer en AO</span></div>
+<div class="mb" style="padding:20px 24px;">
+<p id="mConfirmMsg" style="font-size:14px;line-height:1.6;margin-bottom:20px;">"DISNEY PONGO K1 — Centre de Secours" sera retiré des projets et remis dans le pipeline AO. Les lignes de charge seront retirées.</p>
+<div style="display:flex;gap:10px;justify-content:flex-end;">
+<button class="btn btn-outline" onclick="closeM('mConfirm')">Annuler</button>
+<button class="btn btn-danger" id="mConfirmYes" onclick="_mConfirmOk()">Confirmer</button>
+</div>
+</div>
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════
+     UX ENHANCEMENT PACK — Remplissage tableaux plus facile
+     v1.0 — 2026-04-28
+     - Inputs plus grands et lisibles
+     - Tooltip contextuel flottant (projet + mois + membre)
+     - Ligne active surlignée fortement + agrandie
+     - Navigation clavier améliorée (flèches directionnelles)
+═══════════════════════════════════════════════════════════════════ -->
+<div id="dcn-tooltip"></div>
+<script src="js/forecasts.js"></script>
+<script src="js/project-extensions.js"></script>
+<script src="js/project-modal.js"></script>
+<!-- DCN FIX PLAN DE CHARGE V6 : filtres standard/compact + charges masquées -->
+<script src="js/charge-filters.js"></script>
+<!-- ══ DCN NAV V2 — Glissières haut/bas + boutons ◀ ▶ + mois actuel ══ -->
+<script src="js/scroll-sync.js"></script>
+<script src="js/cockpit.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/save-adapter.js"></script>
+<script src="js/pre-init.js"></script>
+
+</body></html>

@@ -1,0 +1,30 @@
+#mProject .project-edit-modal{
+  display:flex !important;
+  flex-direction:column !important;
+  max-height:92vh !important;
+  overflow:hidden !important;
+}
+#mProject .project-edit-modal .mh,
+#mProject .project-edit-modal .mf{
+  flex:0 0 auto !important;
+}
+#mProject .project-edit-modal .mb{
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  padding-bottom:26px !important;
+}
+#mProject .project-edit-modal .fg{
+  padding-bottom:10px !important;
+}
+#mProject .project-edit-modal .mf{
+  background:#fff !important;
+  border-top:1px solid var(--border) !important;
+  position:relative !important;
+  z-index:5 !important;
+}
+#mProject #dcnActeursWrap,
+#mProject #prNotes{
+  scroll-margin-top:18px;
+}

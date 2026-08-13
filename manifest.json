@@ -1,0 +1,7 @@
+{
+  "name": "DCN Suivi",
+  "short_name": "DCN Suivi",
+  "version": "15.0",
+  "architecture": "github-pages + google-sheets + apps-script",
+  "data_policy": "no-business-data-in-repository"
+}

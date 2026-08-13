@@ -1,0 +1,57 @@
+/* ══ V12 — Navigation & ergonomie ═══════════════════════════════════════ */
+.dcn-ux-nav{display:flex;align-items:center;gap:6px;padding:7px 10px;margin:4px 0 0;border:1px solid #DDE6EF;border-bottom:none;border-radius:9px 9px 0 0;background:linear-gradient(180deg,#FFFFFF,#F8FAFC);position:relative;z-index:12;flex-wrap:wrap}
+.dcn-ux-nav .dcn-ux-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:7px;border:1px solid #D5DEE8;background:#fff;color:var(--navy);font:600 10px/1.2 'Segoe UI',system-ui,sans-serif;cursor:pointer;white-space:nowrap;transition:.12s}
+.dcn-ux-nav .dcn-ux-btn:hover{border-color:var(--blue-light);background:#EEF6FF;color:var(--blue)}
+.dcn-ux-nav .dcn-ux-btn.now{background:#EBF4FF;border-color:#90BBE8;color:var(--blue);font-weight:800}
+.dcn-ux-nav .dcn-ux-hint{font-size:10px;color:var(--gray-dk);margin-left:auto;white-space:nowrap}
+.dcn-ux-topscroll{overflow-x:auto;overflow-y:hidden;height:14px;border-left:1px solid #DDE6EF;border-right:1px solid #DDE6EF;background:#F8FAFC;scrollbar-width:thin;scrollbar-color:#4A7BAF #DDE8F3}
+.dcn-ux-topscroll::-webkit-scrollbar{height:11px}.dcn-ux-topscroll::-webkit-scrollbar-track{background:#DDE8F3}.dcn-ux-topscroll::-webkit-scrollbar-thumb{background:#4A7BAF;border-radius:7px}
+.dcn-ux-grid{overflow:auto!important;max-height:66vh;cursor:grab!important;scrollbar-width:auto!important;scrollbar-color:#4A7BAF #E8EEF5!important;scrollbar-gutter:stable both-edges}
+.dcn-ux-grid.dragging{cursor:grabbing!important;user-select:none}
+.dcn-ux-grid::-webkit-scrollbar{height:13px!important;width:12px!important}.dcn-ux-grid::-webkit-scrollbar-track{background:#E8EEF5}.dcn-ux-grid::-webkit-scrollbar-thumb{background:#4A7BAF;border-radius:7px;border:2px solid #E8EEF5}
+.dcn-ux-grid table thead th{position:sticky!important;top:0;z-index:8;box-shadow:0 1px 0 #D8E1EA}
+.dcn-ux-grid table th:first-child,.dcn-ux-grid table td:first-child{position:sticky!important;left:0;z-index:5;min-width:205px;max-width:270px;background:#fff;box-shadow:2px 0 4px rgba(26,46,68,.08)}
+.dcn-ux-grid table thead th:first-child{z-index:11;background:#F7F9FB!important}
+.dcn-ux-grid table tbody tr:hover td:first-child{background:#EEF6FF!important}
+.dcn-ux-grid table .section-row td:first-child{position:static!important;max-width:none!important;box-shadow:none!important}
+#chargeWrap.dcn-ux-grid table thead th:first-child,#ganttWrap.dcn-ux-grid table thead th:first-child{background:var(--navy)!important;color:#fff!important}
+#chargeWrap.dcn-ux-grid table td.col-name,#ganttWrap.dcn-ux-grid table td.col-name{position:sticky!important;left:0!important;z-index:5!important}
+#page-previsions .dcn-ux-grid table th:first-child,#page-previsions .dcn-ux-grid table td:first-child{min-width:230px;max-width:285px}
+#page-projets .dcn-ux-grid table th:first-child,#page-projets .dcn-ux-grid table td:first-child{min-width:220px;max-width:285px}
+.dcn-ux-focus{outline:3px solid rgba(45,89,134,.25)!important;outline-offset:-2px;animation:dcnUxPulse 1.7s ease}
+@keyframes dcnUxPulse{0%,100%{background-color:inherit}35%{background-color:#DBEAFE}}
+/* Cache les anciens contrôles V2 ; V12 les remplace par un composant synchronisé. */
+.dcn-ts{display:none!important}
+#chargeNavBar,#chargeTopScroll,#ganttNavBar,#ganttTopScroll{display:none!important}
+/* Cockpit : masquage volontaire */
+.dcn-action-item{grid-template-columns:86px minmax(0,1fr) auto 28px!important}
+.dcn-action-hide{width:26px;height:26px;border-radius:7px;border:1px solid transparent;background:transparent;color:#94A3B8;cursor:pointer;font-size:17px;line-height:22px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.dcn-action-hide:hover{background:#FDEAEA;border-color:#FCA5A5;color:#B91C1C}
+.dcn-masked-link{border:1px solid #D5DEE8;background:#fff;color:var(--gray-dk);border-radius:999px;padding:4px 9px;font-size:10px;font-weight:700;cursor:pointer}
+.dcn-masked-link:hover{color:var(--blue);border-color:var(--blue-light)}
+.dcn-masked-list{display:flex;flex-direction:column;gap:7px}
+.dcn-masked-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:#fff}
+.dcn-masked-title{font-size:11px;font-weight:700;color:var(--navy)}.dcn-masked-meta{font-size:10px;color:var(--gray-dk);margin-top:3px}
+/* Liens rapides dans la fiche projet */
+.dcn-sheet-quicknav{display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap;padding-left:5px;border-left:1px solid var(--border)}
+.dcn-sheet-quicknav .btn{font-size:10px;padding:5px 9px}
+@media(max-width:900px){.dcn-ux-grid{max-height:62vh}.dcn-ux-nav .dcn-ux-hint{width:100%;margin-left:0}.dcn-sheet-quicknav{border-left:none;padding-left:0;width:100%}}
+
+
+
+/* Scrollbars natifs plus épais et colorés */
+.charge-wrap,.gantt-wrap,.tw{scrollbar-width:thick !important;scrollbar-color:#4A7BAF #E8EEF5 !important;}
+.charge-wrap::-webkit-scrollbar,.gantt-wrap::-webkit-scrollbar,.tw::-webkit-scrollbar{height:13px !important;}
+.charge-wrap::-webkit-scrollbar-track,.gantt-wrap::-webkit-scrollbar-track,.tw::-webkit-scrollbar-track{background:#E8EEF5;border-radius:4px;}
+.charge-wrap::-webkit-scrollbar-thumb,.gantt-wrap::-webkit-scrollbar-thumb,.tw::-webkit-scrollbar-thumb{background:#4A7BAF;border-radius:4px;}
+/* Glissière du haut */
+#chargeTopScroll,#ganttTopScroll,.dcn-ts{overflow-x:auto;overflow-y:hidden;height:13px;margin-bottom:3px;scrollbar-width:thin;scrollbar-color:#4A7BAF #DDE8F3;}
+#chargeTopScroll::-webkit-scrollbar,#ganttTopScroll::-webkit-scrollbar,.dcn-ts::-webkit-scrollbar{height:10px;}
+#chargeTopScroll::-webkit-scrollbar-track,#ganttTopScroll::-webkit-scrollbar-track,.dcn-ts::-webkit-scrollbar-track{background:#DDE8F3;border-radius:4px;}
+#chargeTopScroll::-webkit-scrollbar-thumb,#ganttTopScroll::-webkit-scrollbar-thumb,.dcn-ts::-webkit-scrollbar-thumb{background:#4A7BAF;border-radius:4px;}
+/* Boutons de navigation */
+.dcn-nav-btn{display:inline-flex;align-items:center;padding:4px 12px;border-radius:6px;border:1px solid #DDE3EA;background:#fff;color:#1A2E44;font-size:11px;font-weight:500;cursor:pointer;transition:background .12s,border-color .12s;font-family:inherit;white-space:nowrap;line-height:1.4;}
+.dcn-nav-btn:hover{background:#F4F6F8;border-color:#4A7BAF;}
+.dcn-nav-btn.dcn-now-btn{background:#EBF4FF;border-color:#90BBE8;color:#2D5986;font-weight:600;}
+.dcn-nav-btn.dcn-now-btn:hover{background:#DBEAFE;}
+.dcn-nav-hint{font-size:10px;color:#7F8C8D;margin-left:4px;font-style:italic;}
