@@ -1,9 +1,9 @@
-/* DCN V16.3 — synchronisation Sheets -> App + polling léger. */
+/* DCN V16.4 — synchronisation Sheets -> App + polling léger. */
 (function(){
   'use strict';
 
   const SERVER_FIELDS=[
-    'cfg','membres','projets','pipelineAO','commercial','factures','parametresMensuels',
+    'cfg','membres','projets','pipelineAO','commercial','prestataires','factures','parametresMensuels',
     'previsionsFacturation','devis','devisDates','devisEmetteurs','lastChargeCpUpdate','devisNotes'
   ];
   let known={revision:0,tableRevisions:{}};
@@ -170,7 +170,7 @@
       window.dispatchEvent(new CustomEvent('dcn-server-changes-applied',{detail:{tables:changed}}));
       return {ok:true,changed};
     }catch(err){
-      console.error('[DCN V16.3] synchronisation descendante',err);
+      console.error('[DCN V16.4] synchronisation descendante',err);
       status('● Erreur de synchronisation');
       if(options.userInitiated && typeof toast==='function')toast('Synchronisation impossible : '+err.message,'err');
       throw err;

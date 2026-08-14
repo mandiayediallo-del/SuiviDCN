@@ -1,4 +1,4 @@
-/* DCN V16.3 — droits fonctionnels Manager / Collaborateur.
+/* DCN V16.4 — droits fonctionnels Manager / Collaborateur.
  * Manager : lecture + écriture partout.
  * Collaborateur : lecture partout, écriture uniquement sur sa propre charge.
  * Le serveur Apps Script applique la même règle : ceci n'est qu'une protection UX supplémentaire.
@@ -6,7 +6,7 @@
 (function(){
   'use strict';
 
-  const MUTATION_HANDLER = /(save|delete|remove|add|edit|reset|update|create|convert|archive|rebascul|open(?:Project|AO|Devis|Facture|Commercial).*Modal|toggle.*(?:active|charge)|importJSON)/i;
+  const MUTATION_HANDLER = /(save|delete|remove|add|edit|reset|update|create|convert|archive|rebascul|open(?:Project|AO|Devis|Facture|Commercial|Prestataire).*Modal|toggle.*(?:active|charge)|importJSON)/i;
 
   function user(){ return window.DCN_CURRENT_USER || {}; }
   function level(){

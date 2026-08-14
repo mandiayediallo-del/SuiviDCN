@@ -1,54 +1,60 @@
-DCN Suivi — V16.3 Droits + synchronisation bidirectionnelle
+DCN Suivi — V16.4 Ressources internes/externes + Prestataires externes
 
-FONCTIONNEL
-1. Paramètres > Collaborateurs
-   - Nom
-   - Email Google obligatoire
-   - Fonction
-   - Capacité
-   - Niveau d'accès : Manager / Collaborateur
-   - Statut : Actif / Inactif
-   - Modification et désactivation sans suppression de l'historique
+1. RESSOURCES / COLLABORATEURS
+Champs :
+- Nom
+- Prénom
+- Type de ressource : Interne / Externe
+- Société / prestataire : obligatoire pour un Externe
+- Email Google : obligatoire pour un Interne, facultatif pour un Externe
+- Fonction
+- Capacité (%)
+- Niveau d'accès : Manager / Collaborateur / Aucun accès
+- Actif : Oui / Non
 
-2. Droits
-   - Manager : voit tout et peut tout modifier.
-   - Collaborateur : voit tout et ne peut modifier que son propre Plan de charge.
-   - Contrôle dans l'interface ET dans Apps Script.
+Règles :
+- Interne + Manager : voit tout et peut tout modifier.
+- Interne + Collaborateur : voit tout et ne modifie que sa propre charge.
+- Externe : Aucun accès forcé côté interface ET côté Apps Script. La ressource reste suivie dans le Plan de charge et les projets.
+- Une ressource inactive ne peut pas se connecter et n'apparaît plus dans les ressources actives, mais son historique est conservé.
+- Les IDs historiques ne sont jamais modifiés.
 
-3. Synchronisation
-   - Bouton "↻ Synchroniser" remplace "Sauvegarder les données".
-   - App -> Sheets : synchronisation automatique après modification.
-   - Sheets -> App : détection par révision de table.
-   - Vérification légère toutes les 25 secondes.
-   - Vérification immédiate au retour sur l'onglet.
-   - Le bouton force envoi + récupération.
-   - Une modification manuelle dans Sheets déclenche onEdit et marque la table modifiée.
+2. CAPACITÉ
+La capacité a désormais un effet métier réel.
+Exemple : capacité 80 %, charge 80 % => occupation de capacité = 100 %, disponibilité = 0 %.
+Les alertes de surcharge / sous-charge utilisent ce taux d'occupation relatif à la capacité.
 
-DEPLOIEMENT
-A. Apps Script
-   - Remplacer Code.gs par DCN_V16_3_CODE_GS_DROITS_SYNC.gs
-   - Enregistrer
-   - Gérer les déploiements > Modifier > Nouvelle version > Déployer
-   - Garder "Exécuter en tant que : Moi" et "Qui a accès : Tout le monde"
-   - Aucun changement appsscript.json / OAuth nécessaire.
+3. PRESTATAIRES EXTERNES
+Nouvel onglet après Suivi commercial.
+Fiche :
+- Raison sociale, nom commercial, SIRET/identifiant, pays, adresse
+- Contact principal
+- Spécialités
+- TJM moyen
+- Zone d'intervention
+- Évaluation /5
+- Ressources externes liées (calculées automatiquement)
+- Projets liés (calculés automatiquement)
+- Échéance assurance
+- Documents / liens
+- Statut
+- Notes
 
-B. GitHub
-   Envoyer le contenu du ZIP patch :
-   - index.html
-   - js/runtime-config.js
-   - js/api.js
-   - js/sync.js
-   - js/config.js
-   - js/permissions.js (nouveau)
-   - js/lazy-load.js
-   - js/bidirectional-sync.js (nouveau)
-   - js/save-adapter.js
-   - js/pre-init.js
+Statuts prestataire :
+- À tester : prestataire identifié mais pas encore évalué/référencé.
+- Référencé : prestataire validé, consultable pour de nouvelles missions.
+- Actif : collaboration actuellement en cours.
+- Suspendu : ne pas solliciter temporairement.
+- Ne plus consulter : prestataire à ne plus solliciter, historique conservé.
 
-TESTS CONSEILLÉS
-1. Manager : modifier un projet puis vérifier le Sheet.
-2. Sheet : modifier un projet puis cliquer Synchroniser dans l'app.
-3. Ajouter Akli avec son email dans Paramètres.
-4. Se connecter avec Akli : toutes les pages visibles, seules ses cases du Plan de charge modifiables.
-5. Modifier une charge d'Akli dans l'app puis vérifier CHARGES.
-6. Modifier une charge dans CHARGES côté Sheet puis cliquer Synchroniser.
+4. GOOGLE SHEETS
+La V16.4 crée automatiquement au premier appel :
+- la feuille PRESTATAIRES si elle n'existe pas ;
+- les nouvelles colonnes de UTILISATEURS : prenom, typeRessource, prestataireId, societe, version (et toute colonne technique manquante).
+Aucune modification manuelle du Google Sheet n'est requise.
+Les modifications App <-> Sheets restent bidirectionnelles.
+
+5. DÉPLOIEMENT
+Apps Script : remplacer Code.gs par DCN_V16_4_CODE_GS_RESSOURCES_PRESTATAIRES.gs, enregistrer, puis Gérer les déploiements > Modifier > Nouvelle version > Déployer.
+GitHub : envoyer le contenu du ZIP patch en conservant les dossiers.
+Aucun changement Google Cloud / OAuth / appsscript.json.

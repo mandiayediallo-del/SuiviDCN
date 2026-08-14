@@ -56,7 +56,7 @@ function defaultDB(){
   try{
     if(window.DCN_EMPTY_DB) return JSON.parse(JSON.stringify(window.DCN_EMPTY_DB));
   }catch(e){ console.error('Default DB read error',e); }
-  return {cfg:{annee:2026,seuilChargeHaute:90,seuilChargeBasse:30,devise:'EUR'},membres:[],projets:[],pipelineAO:[],devis:[],previsionsFacturation:[],charge:{},factures:[],commercial:[],parametresMensuels:{}};
+  return {cfg:{annee:2026,seuilChargeHaute:90,seuilChargeBasse:30,devise:'EUR'},membres:[],projets:[],pipelineAO:[],devis:[],previsionsFacturation:[],charge:{},factures:[],commercial:[],prestataires:[],parametresMensuels:{}};
 }
 
 function readEmbeddedDB(){
@@ -272,6 +272,27 @@ function ensureProjectInCharge(projectId){activeMembers().forEach(m=>{for(let i=
 function ensureAoInCharge(aoId,responsable='',defaultCharge=0){activeMembers().forEach(m=>{for(let i=0;i<12;i++){const e=getChargeEntry(m.id,monthKey(i));if((m.nom===responsable||!responsable) && !e.projets[aoId] && defaultCharge){e.projets[aoId]=defaultCharge;}else{e.projets[aoId]=e.projets[aoId]||0;}}});}
 function removeAoFromCharge(aoId){activeMembers().forEach(m=>{Object.values(DB.charge[m.id]||{}).forEach(e=>delete e.projets[aoId]);});}
 function activeMembers(){return DB.membres.filter(m=>m.statut==='Actif');}
+function resourceDisplayName(m,full=false){
+  if(!m)return '';
+  const prenom=String(m.prenom||'').trim(),nom=String(m.nom||'').trim();
+  if(full){
+    const x=[prenom,nom].filter(Boolean).join(' ').trim();
+    return x||prenom||nom||'Ressource';
+  }
+  return prenom||nom||'Ressource';
+}
+function resourceFullName(m){return resourceDisplayName(m,true);}
+function resourceType(m){return String((m&&m.typeRessource)||'Interne').trim()==='Externe'?'Externe':'Interne';}
+function getMemberCapacity(mid,mk){
+  const m=(DB.membres||[]).find(x=>String(x.id)===String(mid));
+  const memberPct=Math.max(0,Number(m&&m.capaciteBase)||100);
+  const ref=Math.max(0,Number(getMonthConfig(mk).capaciteReference)||100);
+  return ref*memberPct/100;
+}
+function calcOccupationRate(mid,mk){
+  const cap=getMemberCapacity(mid,mk),total=calcChargeTotale(mid,mk);
+  return cap>0?(total/cap*100):(total>0?999:0);
+}
 function getProjectById(id){return DB.projets.find(p=>p.id===id);}
 function getAoById(id){return DB.pipelineAO.find(a=>a.id===id);}
 function projetsActifsCharge(){return DB.projets.filter(p=>{if(['En cours','A venir','A renseigner'].includes(p.statut))return true;// Soldé/Terminé mais toujours actif en charge
@@ -280,7 +301,7 @@ function aosActifsCharge(){return DB.pipelineAO.filter(a=>!['Perdu','Attribution
 function calcChargeProductive(mid,mk){return Object.values(getChargeEntry(mid,mk).projets||{}).reduce((s,v)=>s+normalizePercent(v),0);}
 function calcChargeNonProductive(mid,mk){const e=getChargeEntry(mid,mk);return normalizePercent(e.divers||0)+normalizePercent(e.formation)+normalizePercent(e.conges)+normalizePercent(e.absences);}
 function calcChargeTotale(mid,mk){return calcChargeProductive(mid,mk)+calcChargeNonProductive(mid,mk);}
-function calcDisponibilite(mid,mk){return(getMonthConfig(mk).capaciteReference||100)-calcChargeTotale(mid,mk);}
+function calcDisponibilite(mid,mk){return getMemberCapacity(mid,mk)-calcChargeTotale(mid,mk);}
 function getMissionAmounts(item){return DCNCalc.missions(item).byMission;}
 function missionCols(item){const m=getMissionAmounts(item);return MISSIONS.map(ms=>m[ms]?`<td class="mc">${fmt(m[ms])}</td>`:`<td class="mc-zero">—</td>`).join('');}
 function pillNature(n){return `<span class="pill ${n==='Mission directe'?'pill-direct':'pill-ao'}">${n||'—'}</span>`;}
@@ -313,20 +334,20 @@ function calcDashboardKPIs(mk=activeMonthKey()){
   },0);
   const topProjects2026=[...actifsAvecCA2026].sort((a,b)=>calcCAProjet(b).courant-calcCAProjet(a).courant).slice(0,5);
   const members=activeMembers();
-  let totalCharge=0,totalFormation=0,totalConges=0,totalAbsences=0,surcharge=0,sousCharge=0;
+  let totalCharge=0,totalOccupation=0,totalFormation=0,totalConges=0,totalAbsences=0,surcharge=0,sousCharge=0;
   members.forEach(m=>{
-    const e=getChargeEntry(m.id,mk),total=calcChargeTotale(m.id,mk);
-    totalCharge+=total;totalFormation+=normalizePercent(e.formation);totalConges+=normalizePercent(e.conges);totalAbsences+=normalizePercent(e.absences);
-    if(total>=DB.cfg.seuilChargeHaute)surcharge++;else if(total>0&&total<DB.cfg.seuilChargeBasse)sousCharge++;
+    const e=getChargeEntry(m.id,mk),total=calcChargeTotale(m.id,mk),occupation=calcOccupationRate(m.id,mk);
+    totalCharge+=total;totalOccupation+=occupation;totalFormation+=normalizePercent(e.formation);totalConges+=normalizePercent(e.conges);totalAbsences+=normalizePercent(e.absences);
+    if(occupation>=DB.cfg.seuilChargeHaute)surcharge++;else if(total>0&&occupation<DB.cfg.seuilChargeBasse)sousCharge++;
   });
   const jamais=DB.commercial.filter(c=>c.statutRelation==='Jamais contacte'||c.jamaisContacte).length;
   const aoChaudes=DB.pipelineAO.filter(ao=>(Number(ao.probabilite)||0)>=50||['Offre deposee','Negociation'].includes(ao.phase)).length;
   const actionsReq=DB.commercial.filter(x=>x.actionFaire==='Appeler'||x.actionFaire==='Relancer').length;
   const alertes=[];
   members.forEach(m=>{
-    const t=calcChargeTotale(m.id,mk);
-    if(t>=DB.cfg.seuilChargeHaute)alertes.push({niveau:'danger',msg:`${m.nom} surchargé à ${Math.round(t)}%`,lien:'charge'});
-    else if(t>0&&t<DB.cfg.seuilChargeBasse)alertes.push({niveau:'warning',msg:`${m.nom} sous-chargé à ${Math.round(t)}%`,lien:'charge'});
+    const t=calcChargeTotale(m.id,mk),cap=getMemberCapacity(m.id,mk),occ=calcOccupationRate(m.id,mk),name=resourceDisplayName(m);
+    if(occ>=DB.cfg.seuilChargeHaute)alertes.push({niveau:'danger',msg:`${name} : ${Math.round(t)}% chargé / capacité ${Math.round(cap)}% (${Math.round(occ)}%)`,lien:'charge'});
+    else if(t>0&&occ<DB.cfg.seuilChargeBasse)alertes.push({niveau:'warning',msg:`${name} : ${Math.round(t)}% chargé / capacité ${Math.round(cap)}% (${Math.round(occ)}%)`,lien:'charge'});
   });
   actifs.forEach(p=>{
     const ca=calcCAProjet(p),sum=ca.avant+ca.courant+ca.apres,total=calcMontantTotal(p);
@@ -344,7 +365,7 @@ function calcDashboardKPIs(mk=activeMonthKey()){
       caAvant:caGlobal.avant,caApres:caGlobal.apres,
       caProjetsActifsTotal,caProjetsActifs2026,pipelineUtile2026
     },
-    charge:{chargeMoyenne:members.length?totalCharge/members.length:0,surcharge,sousCharge,formationTotale:totalFormation,congesTotaux:totalConges,absencesTotales:totalAbsences},
+    charge:{chargeMoyenne:members.length?totalOccupation/members.length:0,chargeBruteMoyenne:members.length?totalCharge/members.length:0,surcharge,sousCharge,formationTotale:totalFormation,congesTotaux:totalConges,absencesTotales:totalAbsences},
     production:{
       nbProjetsEnCours:DB.projets.filter(p=>p.statut==='En cours').length,
       nbSoldes:DB.projets.filter(p=>p.statut==='Solde').length,
@@ -365,7 +386,7 @@ function goPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const titles={dashboard:"Dashboard",projets:"Projets",previsions:"Prévisions",charge:"Plan de charge",gantt:"Planning Gantt",pipeline:"Pipeline Appels d'offre",devis:"Suivi des devis",etablissement:"Suivi des établissements",commercial:"Suivi commercial",facturation:"Facturation",config:"Configuration"};
+  const titles={dashboard:"Dashboard",projets:"Projets",previsions:"Prévisions",charge:"Plan de charge",gantt:"Planning Gantt",pipeline:"Pipeline Appels d'offre",devis:"Suivi des devis",etablissement:"Suivi des établissements",commercial:"Suivi commercial",prestataires:"Prestataires externes",facturation:"Facturation",config:"Configuration"};
   document.getElementById('pgTitle').textContent=titles[id]||id;
   const activeNav=document.querySelector(`.ni[data-page="${id}"]`);
   if(activeNav) activeNav.classList.add('active');
@@ -380,6 +401,7 @@ function renderPage(id){
   else if(id==='devis')renderDevisPage();
   else if(id==='etablissement')renderEtablissementPage();
   else if(id==='commercial')renderCommercialPage();
+  else if(id==='prestataires' && typeof renderPrestatairesPage==='function')renderPrestatairesPage();
   else if(id==='facturation')renderFacturationPage();
   else if(id==='config')renderConfigPage();
   else if(id==='previsions'){if(typeof renderPrevisionsPage==='function')renderPrevisionsPage();}
@@ -404,8 +426,8 @@ function renderDashboard(){
     <div class="kcard kg"><div class="klbl">CA Jan → mois courant</div><div class="kval">${fmt(k.financier.caJanToCurrent)}</div><div class="ksub">Projection cumulée</div></div>
     <div class="kcard kb"><div class="klbl">CA années suivantes</div><div class="kval">${fmt(k.financier.caApres)}</div><div class="ksub">Après 2026</div></div>`;
   document.getElementById('dashChargeWidget').innerHTML=activeMembers().map(m=>{
-    const t=calcChargeTotale(m.id,mk),d=calcDisponibilite(m.id,mk),col=t>=DB.cfg.seuilChargeHaute?'var(--red)':t>0&&t<DB.cfg.seuilChargeBasse?'var(--orange)':'var(--green)';
-    return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:12px;font-weight:500;">${m.nom}</span><span style="font-size:12px;font-weight:600;color:${col};">${Math.round(t)}% / dispo ${Math.round(d)}%</span></div><div class="pbar"><div class="pfill" style="width:${Math.min(t,100)}%;background:${col};"></div></div></div>`;
+    const t=calcChargeTotale(m.id,mk),d=calcDisponibilite(m.id,mk),cap=getMemberCapacity(m.id,mk),occ=calcOccupationRate(m.id,mk),col=occ>=DB.cfg.seuilChargeHaute?'var(--red)':t>0&&occ<DB.cfg.seuilChargeBasse?'var(--orange)':'var(--green)';
+    return `<div style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:12px;font-weight:500;">${resourceDisplayName(m)}</span><span style="font-size:12px;font-weight:600;color:${col};">${Math.round(t)}% / cap. ${Math.round(cap)}% · ${Math.round(occ)}%</span></div><div class="pbar"><div class="pfill" style="width:${Math.min(occ,100)}%;background:${col};"></div></div></div>`;
   }).join('')+`<div style="margin-top:10px;font-size:11px;color:var(--gray-dk);">Formation ${Math.round(k.charge.formationTotale)}% · Congés ${Math.round(k.charge.congesTotaux)}% · Absences ${Math.round(k.charge.absencesTotales)}%</div>`;
   const ap=document.getElementById('alertsPanel');
   ap.innerHTML=k.alertes.length?k.alertes.map(a=>`<div class="al ${a.niveau==='danger'?'al-r':'al-o'}" onclick="goPage('${a.lien}')" style="cursor:pointer;"><div class="al-dot ${a.niveau==='danger'?'dot-r':'dot-o'}"></div><div class="al-txt"><span class="al-p">${a.msg}</span></div></div>`).join(''):'<div class="empty">Aucune alerte active</div>';
@@ -440,8 +462,8 @@ function destroyChart(k){if(DASH_CHARTS[k]){DASH_CHARTS[k].destroy();DASH_CHARTS
 function formatK(n){if(n===null||n===undefined||isNaN(Number(n)))return '—';const v=Number(n);if(Math.abs(v)>=1000000)return (v/1000000).toLocaleString('fr-FR',{maximumFractionDigits:1})+' M€';if(Math.abs(v)>=1000)return (v/1000).toLocaleString('fr-FR',{maximumFractionDigits:0})+' k€';return v.toLocaleString('fr-FR')+' €';}
 function upsertChart(key,canvasId,config){const c=document.getElementById(canvasId);if(!c||typeof Chart==='undefined')return;destroyChart(key);DASH_CHARTS[key]=new Chart(c.getContext('2d'),config);}
 function renderDashboardCharts(k,mk){
-  const ml=activeMembers().map(m=>m.nom),mc=activeMembers().map(m=>Math.round(calcChargeTotale(m.id,mk)));
-  upsertChart('charge','chartCharge',{type:'bar',data:{labels:ml,datasets:[{label:'Charge %',data:mc,backgroundColor:mc.map(v=>v>=DB.cfg.seuilChargeHaute?'rgba(231,76,60,.75)':v>0&&v<DB.cfg.seuilChargeBasse?'rgba(243,156,18,.75)':'rgba(39,174,96,.75)'),borderWidth:0,maxBarThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120}}}});
+  const ml=activeMembers().map(m=>resourceDisplayName(m)),mc=activeMembers().map(m=>Math.round(calcOccupationRate(m.id,mk)));
+  upsertChart('charge','chartCharge',{type:'bar',data:{labels:ml,datasets:[{label:'Occupation de la capacité %',data:mc,backgroundColor:mc.map(v=>v>=DB.cfg.seuilChargeHaute?'rgba(231,76,60,.75)':v>0&&v<DB.cfg.seuilChargeBasse?'rgba(243,156,18,.75)':'rgba(39,174,96,.75)'),borderWidth:0,maxBarThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,max:120}}}});
   const phases=['Identification','Qualification','Offre deposee','Negociation','Attribution','Perdu'];
   upsertChart('pipeline','chartPipeline',{type:'bar',data:{labels:phases,datasets:[{label:'AO',data:phases.map(ph=>DB.pipelineAO.filter(a=>a.phase===ph).length),backgroundColor:'rgba(74,123,175,.8)',borderWidth:0,maxBarThickness:48}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0,stepSize:1}}}}});
   const caData=calcCAMonthly2026();
@@ -1385,7 +1407,7 @@ function renderFacturationPage(){
   }).join(''):'<tr><td colspan="9" class="empty">Aucune facture</td></tr>';
 }
 
-function renderConfigPage(){
+function renderConfigPageLegacy(){
   document.getElementById('tbMembers').innerHTML=DB.membres.map(m=>`<tr><td>${m.nom}</td><td>${m.role||'—'}</td><td>${m.capaciteBase||100}%</td><td>${badgeStatus(m.statut)}</td><td><button class="btn btn-danger btn-sm" onclick="deleteMember('${m.id}')">x</button></td></tr>`).join('');
   document.getElementById('cfgYear').value=DB.cfg.annee;document.getElementById('cfgHigh').value=DB.cfg.seuilChargeHaute;document.getElementById('cfgLow').value=DB.cfg.seuilChargeBasse;document.getElementById('cfgCurrency').value=DB.cfg.devise;
   const sn=document.getElementById('cfgServiceName');if(sn)sn.value=DB.cfg.serviceName||'';
@@ -1416,7 +1438,7 @@ function collectMissions(prefix){return MISSIONS.map(m=>({mission:m,montant:Numb
 /* V14: devis.js externalisé. */
 function renderAll(){
   renderDashboard();renderProjectsPage();renderChargePage();renderGanttPage();
-  renderPipelinePage();renderAODashboard();renderDevisPage();renderCommercialPage();renderFacturationPage();renderConfigPage();
+  renderPipelinePage();renderAODashboard();renderDevisPage();renderCommercialPage();if(typeof renderPrestatairesPage==='function')renderPrestatairesPage();renderFacturationPage();renderConfigPage();
   if(typeof renderPrevisionsPage==='function')renderPrevisionsPage();
   if(typeof enhanceProjectSheetLinks==='function')enhanceProjectSheetLinks();
   if(typeof updateServiceBadge==='function')updateServiceBadge();

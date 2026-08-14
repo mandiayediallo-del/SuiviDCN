@@ -93,7 +93,7 @@ function dcnEnsureFiltersUI(){
     wrap.parentNode.insertBefore(panel,wrap);
   }
   var f=window.DCN_CHARGE_FILTERS||{member:'all',status:'all',saisie:'all'};
-  var memberOpts='<option value="all">Tous les collaborateurs</option>'+activeMembers().map(function(m){return '<option value="'+dcnEsc(m.id)+'" '+(f.member===m.id?'selected':'')+'>'+dcnEsc(m.nom)+'</option>';}).join('');
+  var memberOpts='<option value="all">Tous les collaborateurs</option>'+activeMembers().map(function(m){return '<option value="'+dcnEsc(m.id)+'" '+(f.member===m.id?'selected':'')+'>'+dcnEsc(typeof resourceDisplayName==='function'?resourceDisplayName(m):m.nom)+'</option>';}).join('');
   var statusOpts='<option value="all">Tous les statuts</option>'+dcnStatusOptions().map(function(s){return '<option value="'+dcnEsc(s)+'" '+(f.status===s?'selected':'')+'>'+dcnEsc(s)+'</option>';}).join('');
   var saisie=[['all','Toutes les lignes'],['filled','Lignes remplies uniquement'],['empty','Lignes vides uniquement'],['strong','Charges fortes'],['low','Charges faibles']].map(function(o){return '<option value="'+o[0]+'" '+(f.saisie===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('');
   panel.innerHTML = `
@@ -114,7 +114,7 @@ function dcnVisibleTotal(mid,mk){
   var e=getChargeEntry(mid,mk);
   return dcnVisibleProductive(mid,mk)+normalizePercent(e.divers||0)+normalizePercent(e.formation)+normalizePercent(e.conges)+normalizePercent(e.absences);
 }
-function dcnVisibleDisponibilite(mid,mk){return (getMonthConfig(mk).capaciteReference||100)-dcnVisibleTotal(mid,mk);}
+function dcnVisibleDisponibilite(mid,mk){return (typeof getMemberCapacity==='function'?getMemberCapacity(mid,mk):(getMonthConfig(mk).capaciteReference||100))-dcnVisibleTotal(mid,mk);}
 function dcnCellInput(v,mid,mk,pid,wide){
   return `<input class="input-mini ${getChargeInputClass(v)}" value="${v||''}" data-mid="${dcnEsc(mid)}" data-mk="${dcnEsc(mk)}" data-pid="${dcnEsc(pid)}" oninput="setChargeProjet(this)" ${wide?'':'style="width:44px;font-size:10px;"'}>`;
 }
@@ -153,7 +153,7 @@ window.renderChargePage=function(){
   var html=`<table class="ct-table"><thead><tr><th class="col-name">Projet / ligne</th>${MOIS.map(function(m,i){return `<th class="${i===ACTIVE_MONTH?'col-now':''}">${m}</th>`;}).join('')}</tr></thead><tbody>`;
   members.forEach(function(m){
     var items=dcnVisibleItemsForMembers([m]);
-    html+=`<tr class="section-row"><td colspan="13">${dcnEsc((m.nom||'').toUpperCase())} <span class="member-role">${dcnEsc(m.role||'Collaborateur')}</span></td></tr>`;
+    html+=`<tr class="section-row"><td colspan="13">${dcnEsc((typeof resourceDisplayName==='function'?resourceDisplayName(m):m.nom||'').toUpperCase())} <span class="member-role">${dcnEsc(m.role||'Collaborateur')} · Capacité ${Math.round(typeof getMemberCapacity==='function'?getMemberCapacity(m.id,activeMonthKey()):(m.capaciteBase||100))}%${String(m.typeRessource||'Interne')==='Externe'?' · Externe':''}</span></td></tr>`;
     items.forEach(function(item){
       var isAo=item.type==='ao';
       var isSolde=!isAo&&['Solde','Termine'].includes(item.statut)&&item.chargeActif===true;
@@ -179,7 +179,7 @@ window.renderChargePage=function(){
     html+=`<tr class="total-row calc-row"><td class="col-name line-indent">Total occupé visible</td>`;
     for(var i=0;i<12;i++){
       var mk=monthKey(i), t=Math.round(dcnVisibleTotal(m.id,mk));
-      html+=`<td id="ct-${dcnEsc(m.id)}-${mk}" class="${i===ACTIVE_MONTH?'col-now':''} ${t>100?'calc-over':''}">${t}%</td>`;
+      html+=`<td id="ct-${dcnEsc(m.id)}-${mk}" class="${i===ACTIVE_MONTH?'col-now':''} ${t>(typeof getMemberCapacity==='function'?getMemberCapacity(m.id,mk):100)?'calc-over':''}">${t}%</td>`;
     }
     html+='</tr><tr class="total-row calc-row"><td class="col-name line-indent">Disponible visible</td>';
     for(var j=0;j<12;j++){
@@ -204,7 +204,7 @@ window.renderChargePageCompact=function(){
   var thMonths=`<th class="col-name" rowspan="2" style="position:sticky;left:0;z-index:4;background:var(--navy);min-width:250px;text-align:left;">Projet</th>`;
   MOIS.forEach(function(m,i){thMonths+=`<th colspan="${Math.max(members.length,1)}" style="text-align:center;border-left:2px solid rgba(255,255,255,.15);background:${i===ACTIVE_MONTH?'var(--blue)':'var(--navy)'};">${m}</th>`;});
   var thMembers='';
-  MOIS.forEach(function(m,i){members.forEach(function(mbr,mi){thMembers+=`<th style="font-size:9px;text-align:center;padding:4px 3px;${mi===0?'border-left:2px solid rgba(255,255,255,.15);':''}background:${i===ACTIVE_MONTH?'rgba(45,89,134,.9)':'rgba(26,46,68,.85)'};">${dcnEsc((mbr.nom||'').split(' ')[0].slice(0,7))}</th>`;});if(!members.length) thMembers+='<th>—</th>';});
+  MOIS.forEach(function(m,i){members.forEach(function(mbr,mi){thMembers+=`<th style="font-size:9px;text-align:center;padding:4px 3px;${mi===0?'border-left:2px solid rgba(255,255,255,.15);':''}background:${i===ACTIVE_MONTH?'rgba(45,89,134,.9)':'rgba(26,46,68,.85)'};">${dcnEsc((typeof resourceDisplayName==='function'?resourceDisplayName(mbr):mbr.nom||'').split(' ')[0].slice(0,7))}</th>`;});if(!members.length) thMembers+='<th>—</th>';});
   var html=`<table class="ct-table"><thead><tr>${thMonths}</tr><tr>${thMembers}</tr></thead><tbody>`;
   items.forEach(function(item){
     var isAo=item.type==='ao';
@@ -247,7 +247,7 @@ window.renderChargePageCompact=function(){
     members.forEach(function(mbr,mi){
       var t=Math.round(dcnVisibleTotal(mbr.id,mk));
       var borderL=mi===0?'border-left:2px solid '+(i===ACTIVE_MONTH?'var(--month-now-border)':monthBorders[i])+';':'';
-      html+=`<td id="ct-${dcnEsc(mbr.id)}-${mk}-cpt" style="text-align:center;font-weight:700;font-size:11px;padding:4px 2px;${i===ACTIVE_MONTH?'background:var(--month-now);':'background:#E8EEF5;'}${borderL}${t>100?'color:var(--red);':'color:var(--green);'}">${t}%</td>`;
+      html+=`<td id="ct-${dcnEsc(mbr.id)}-${mk}-cpt" style="text-align:center;font-weight:700;font-size:11px;padding:4px 2px;${i===ACTIVE_MONTH?'background:var(--month-now);':'background:#E8EEF5;'}${borderL}${t>(typeof getMemberCapacity==='function'?getMemberCapacity(mbr.id,mk):100)?'color:var(--red);':'color:var(--green);'}">${t}%</td>`;
     });
     if(!members.length) html+='<td></td>';
   }
@@ -272,10 +272,10 @@ window.refreshCalcCells=function(mid){
   for(var i=0;i<12;i++){
     var mk=monthKey(i), t=Math.round(dcnVisibleTotal(mid,mk)), d=Math.round(dcnVisibleDisponibilite(mid,mk));
     var tc=document.getElementById(`ct-${mid}-${mk}`), dc=document.getElementById(`cd-${mid}-${mk}`);
-    if(tc){tc.textContent=t+'%';tc.classList.toggle('calc-over',t>100);}
+    if(tc){tc.textContent=t+'%';tc.classList.toggle('calc-over',t>(typeof getMemberCapacity==='function'?getMemberCapacity(mid,mk):100));}
     if(dc){dc.textContent=d+'%';dc.classList.toggle('calc-over',d<0);dc.classList.toggle('calc-under',d>=0);}
     var tcc=document.getElementById(`ct-${mid}-${mk}-cpt`), dcc=document.getElementById(`cd-${mid}-${mk}-cpt`);
-    if(tcc){tcc.textContent=t+'%';tcc.style.color=t>100?'var(--red)':'var(--green)';}
+    if(tcc){tcc.textContent=t+'%';tcc.style.color=t>(typeof getMemberCapacity==='function'?getMemberCapacity(mid,mk):100)?'var(--red)':'var(--green)';}
     if(dcc){dcc.textContent=d+'%';dcc.style.color=d<0?'var(--red)':'#1A7A42';}
   }
 };
@@ -306,7 +306,7 @@ window.dcnShowMaskedCharges=function(){
         var statusHidden=!dcnPassStatus(item);
         var saisieHidden=!dcnPassSaisie(item,[m]);
         if(memberHidden||statusHidden||saisieHidden){
-          hidden.push(`${m.nom} — ${MOIS_L[i]} — ${item.nom} (${dcnItemStatus(item)}) : ${v}%`);
+          hidden.push(`${typeof resourceDisplayName==='function'?resourceDisplayName(m):m.nom} — ${MOIS_L[i]} — ${item.nom} (${dcnItemStatus(item)}) : ${v}%`);
         }
       }
     });

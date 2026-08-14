@@ -6,7 +6,7 @@
 <!DOCTYPE html>
 
 <html lang="fr"><head>
-<!-- DCN SUIVI V16.3 — droits Manager/Collaborateur + synchronisation bidirectionnelle -->
+<!-- DCN SUIVI V16.4 — ressources internes/externes + prestataires externes -->
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -30,8 +30,9 @@
 <link href="css/cockpit.css" rel="stylesheet"/>
 <link href="css/navigation.css" rel="stylesheet"/>
 <link href="css/ux-enhancements.css" rel="stylesheet"/>
+<link href="css/prestataires.css?v=164" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client?hl=fr"></script></head>
-<body><script src="js/runtime-config.js?v=163"></script><script src="js/state.js?v=160"></script><script src="js/auth.js?v=160"></script><script src="js/bridge.js?v=160"></script><script src="js/api.js?v=163"></script><script src="data/empty-db.js?v=160"></script><script src="js/data-mapper.js?v=160"></script><script src="js/sync.js?v=163"></script>
+<body><script src="js/runtime-config.js?v=164"></script><script src="js/state.js?v=160"></script><script src="js/auth.js?v=160"></script><script src="js/bridge.js?v=160"></script><script src="js/api.js?v=164"></script><script src="data/empty-db.js?v=160"></script><script src="js/data-mapper.js?v=164"></script><script src="js/sync.js?v=164"></script>
 <nav id="sb">
 <div class="logo"><div class="logo-t">Demathieu Bard</div><div class="logo-s">Construction Numérique</div><div id="serviceNameBadge" style="display:none;margin-top:6px;padding:3px 8px;background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.3);border-radius:12px;font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.3px;"></div></div>
 <div class="nav-sec">
@@ -45,6 +46,7 @@
 <div class="ni" data-page="devis" onclick="goPage('devis')">◼ Suivi des devis</div>
 <div class="ni" data-page="etablissement" onclick="goPage('etablissement')">◼ Suivi des établissements</div>
 <div class="ni" data-page="commercial" onclick="goPage('commercial')">◼ Suivi commercial</div>
+<div class="ni" data-page="prestataires" onclick="goPage('prestataires')">◼ Prestataires externes</div>
 <div class="ni" data-page="facturation" onclick="goPage('facturation')">◼ Facturation</div>
 <div class="ni" data-page="config" onclick="goPage('config')">◼ Configuration</div>
 </div>
@@ -376,6 +378,33 @@
 </div>
 </div>
 </div>
+<div class="page" id="page-prestataires">
+  <div class="sbar">
+    <input class="fi" id="srchPrestataire" oninput="renderPrestatairesPage()" placeholder="Rechercher société, contact, spécialité..." style="max-width:280px;"/>
+    <select class="fs" id="filtPrestataireStatut" onchange="renderPrestatairesPage()">
+      <option value="">Tous statuts</option>
+      <option value="À tester">À tester</option>
+      <option value="Référencé">Référencé</option>
+      <option value="Actif">Actif</option>
+      <option value="Suspendu">Suspendu</option>
+      <option value="Ne plus consulter">Ne plus consulter</option>
+    </select>
+    <div style="margin-left:auto"><button class="btn btn-primary" onclick="openPrestataireModal()">+ Nouveau prestataire</button></div>
+  </div>
+  <div class="kgrid" id="prestataireKpis" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px;"></div>
+  <div class="card">
+    <div class="ch"><span class="ct">Prestataires externes</span><span id="prestataireCount"></span></div>
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Société</th><th>Contact principal</th><th>Spécialités</th><th>Ressources</th>
+          <th>TJM</th><th>Projets liés</th><th>Évaluation</th><th>Statut</th><th></th>
+        </tr></thead>
+        <tbody id="tbPrestataires"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 <div class="page" id="page-previsions">
 <div class="sbar">
 <input class="fi" id="srchForecast" oninput="renderPrevisionsPage()" placeholder="Rechercher un projet..." style="max-width:240px;"/>
@@ -415,22 +444,38 @@
 </div>
 <div class="page" id="page-config">
 <div class="g2">
-<div class="card"><div class="ch"><span class="ct">Collaborateurs</span></div><div class="cb">
-<table><thead><tr><th>Nom</th><th>Email Google</th><th>Fonction</th><th>Capacité</th><th>Accès</th><th>Statut</th><th></th></tr></thead><tbody id="tbMembers"></tbody></table>
+<div class="card"><div class="ch"><span class="ct">Ressources / collaborateurs</span></div><div class="cb">
+<table><thead><tr>
+  <th>Nom</th><th>Prénom</th><th>Type</th><th>Société</th><th>Email Google</th>
+  <th>Fonction</th><th>Capacité</th><th>Accès</th><th>Actif</th><th></th>
+</tr></thead><tbody id="tbMembers"></tbody></table>
 <input id="editMemberId" type="hidden"/>
-<div style="margin-top:12px;display:grid;grid-template-columns:1.1fr 1.5fr 1.1fr .65fr .9fr .8fr;gap:6px;align-items:end;">
-  <div class="fgrp"><label class="flbl">Nom</label><input class="fi" id="newMemberName" placeholder="Nom du collaborateur"/></div>
-  <div class="fgrp"><label class="flbl">Email Google</label><input class="fi" id="newMemberEmail" type="email" placeholder="prenom.nom@gmail.com"/></div>
-  <div class="fgrp"><label class="flbl">Fonction</label><input class="fi" id="newMemberRole" placeholder="Ex : BIM Manager"/></div>
-  <div class="fgrp"><label class="flbl">Capacité (%)</label><input class="fi" id="newMemberCapacity" type="number" min="0" max="200" value="100"/></div>
-  <div class="fgrp"><label class="flbl">Niveau d'accès</label><select class="fs" id="newMemberAccess"><option value="Collaborateur">Collaborateur</option><option value="Manager">Manager</option></select></div>
-  <div class="fgrp"><label class="flbl">Statut</label><select class="fs" id="newMemberStatus"><option value="Actif">Actif</option><option value="Inactif">Inactif</option></select></div>
+<div class="resource-form-grid">
+  <div class="fgrp"><label class="flbl">Nom *</label><input class="fi" id="newMemberName" placeholder="Nom"/></div>
+  <div class="fgrp"><label class="flbl">Prénom *</label><input class="fi" id="newMemberFirstName" placeholder="Prénom"/></div>
+  <div class="fgrp"><label class="flbl">Type de ressource *</label>
+    <select class="fs" id="newMemberType" onchange="onMemberTypeChange()">
+      <option value="Interne">Interne</option><option value="Externe">Externe</option>
+    </select>
+  </div>
+  <div class="fgrp" id="memberProviderGroup"><label class="flbl">Société / prestataire *</label>
+    <select class="fs" id="newMemberProvider"></select>
+  </div>
+  <div class="fgrp"><label class="flbl">Email Google</label><input class="fi" id="newMemberEmail" type="email" placeholder="Compte Google de connexion"/></div>
+  <div class="fgrp"><label class="flbl">Fonction *</label><input class="fi" id="newMemberRole" placeholder="Ex : BIM Manager"/></div>
+  <div class="fgrp"><label class="flbl">Capacité (%) *</label><input class="fi" id="newMemberCapacity" type="number" min="1" max="200" value="100"/></div>
+  <div class="fgrp"><label class="flbl">Niveau d'accès</label>
+    <select class="fs" id="newMemberAccess"><option value="Collaborateur">Collaborateur</option><option value="Manager">Manager</option><option value="Aucun accès">Aucun accès</option></select>
+  </div>
+  <div class="fgrp"><label class="flbl">Actif</label>
+    <select class="fs" id="newMemberStatus"><option value="Actif">Oui — Actif</option><option value="Inactif">Non — Inactif</option></select>
+  </div>
 </div>
+<div id="memberFormHint" class="resource-form-hint"></div>
 <div style="margin-top:10px;display:flex;gap:6px;justify-content:flex-end;">
   <button class="btn btn-outline btn-sm" id="memberCancelBtn" onclick="cancelMemberEdit()" style="display:none;">Annuler</button>
-  <button class="btn btn-primary btn-sm" id="memberSaveBtn" onclick="saveMemberForm()">Ajouter le collaborateur</button>
+  <button class="btn btn-primary btn-sm" id="memberSaveBtn" onclick="saveMemberForm()">Ajouter la ressource</button>
 </div>
-<div style="margin-top:8px;font-size:11px;color:var(--muted);">L'adresse doit correspondre au compte Google utilisé pour se connecter à SuiviDCN.</div>
 </div></div>
 <div class="card"><div class="ch"><span class="ct">Paramètres globaux</span></div><div class="cb" style="display:flex;flex-direction:column;gap:10px;">
 <div class="fgrp"><label class="flbl">Nom du service</label><input class="fi" id="cfgServiceName" placeholder="Ex : DCN Île-de-France"/></div>
@@ -446,6 +491,49 @@
 </div>
 </div>
 </main>
+<!-- MODAL PRESTATAIRE EXTERNE -->
+<div class="ov" id="mPrestataire"><div class="modal" style="max-width:980px;">
+  <div class="mh"><span class="mt" id="mPrestataireTitle">Prestataire externe</span><button class="mx" onclick="closeM('mPrestataire')">x</button></div>
+  <div class="mb">
+    <input id="prestataireId" type="hidden"/>
+    <div class="fg">
+      <div class="sdiv">Identité</div>
+      <div class="fgrp"><label class="flbl">Raison sociale *</label><input class="fi" id="psRaisonSociale"/></div>
+      <div class="fgrp"><label class="flbl">Nom commercial</label><input class="fi" id="psNomCommercial"/></div>
+      <div class="fgrp"><label class="flbl">SIRET / identifiant</label><input class="fi" id="psSiret"/></div>
+      <div class="fgrp"><label class="flbl">Pays</label><input class="fi" id="psPays"/></div>
+      <div class="fgrp ff"><label class="flbl">Adresse</label><input class="fi" id="psAdresse"/></div>
+
+      <div class="sdiv">Contact principal</div>
+      <div class="fgrp"><label class="flbl">Prénom</label><input class="fi" id="psContactPrenom"/></div>
+      <div class="fgrp"><label class="flbl">Nom</label><input class="fi" id="psContactNom"/></div>
+      <div class="fgrp"><label class="flbl">Fonction</label><input class="fi" id="psContactFonction"/></div>
+      <div class="fgrp"><label class="flbl">Email</label><input class="fi" id="psContactEmail" type="email"/></div>
+      <div class="fgrp"><label class="flbl">Téléphone</label><input class="fi" id="psContactTel"/></div>
+
+      <div class="sdiv">Compétences & conditions</div>
+      <div class="fgrp ff"><label class="flbl">Spécialités</label><input class="fi" id="psSpecialites" placeholder="BIM Management, Synthèse, Modélisation..."/></div>
+      <div class="fgrp"><label class="flbl">TJM moyen (€)</label><input class="fi" id="psTjm" type="number" min="0" step="10"/></div>
+      <div class="fgrp"><label class="flbl">Zone d'intervention</label><input class="fi" id="psZoneIntervention" placeholder="France, Luxembourg, distanciel..."/></div>
+      <div class="fgrp"><label class="flbl">Évaluation</label>
+        <select class="fs" id="psEvaluation"><option value="0">Non évalué</option><option value="1">1 / 5</option><option value="2">2 / 5</option><option value="3">3 / 5</option><option value="4">4 / 5</option><option value="5">5 / 5</option></select>
+      </div>
+      <div class="fgrp"><label class="flbl">Statut</label>
+        <select class="fs" id="psStatut"><option>À tester</option><option>Référencé</option><option>Actif</option><option>Suspendu</option><option>Ne plus consulter</option></select>
+      </div>
+
+      <div class="sdiv">Ressources & projets liés</div>
+      <div class="fgrp ff"><div class="note-box"><div class="flbl">Ressources externes</div><div id="psLinkedResources" style="font-size:12px;line-height:1.6;">Aucune ressource liée</div></div></div>
+      <div class="fgrp ff"><div class="note-box"><div class="flbl">Projets</div><div id="psLinkedProjects" style="font-size:12px;line-height:1.6;">Aucun projet lié</div></div></div>
+
+      <div class="sdiv">Documents & suivi</div>
+      <div class="fgrp"><label class="flbl">Échéance assurance</label><input class="fi" id="psAssuranceEcheance" type="date"/></div>
+      <div class="fgrp ff"><label class="flbl">Documents / liens</label><textarea class="fta" id="psDocuments" rows="3" placeholder="Liens Drive, assurance, Kbis, contrat, références..."></textarea></div>
+      <div class="fgrp ff"><label class="flbl">Notes</label><textarea class="fta" id="psNotes" rows="4"></textarea></div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn btn-outline" onclick="closeM('mPrestataire')">Annuler</button><button class="btn btn-primary" onclick="savePrestataire()">Enregistrer</button></div>
+</div></div>
 <!-- MODAL PROJECT -->
 <div class="ov" id="mProject"><div class="modal project-edit-modal">
 <div class="mh"><span class="mt" id="mProjectTitle">Projet</span><button class="mx" onclick="closeM('mProject')">x</button></div>
@@ -685,12 +773,13 @@
 </div>
 <div class="" id="toast"></div>
 <script src="js/vendor/minichart.js"></script>
-<script src="js/app-core.js?v=1611"></script>
+<script src="js/app-core.js?v=164"></script>
 <script src="js/projects.js"></script>
 <script src="js/ao.js"></script>
-<script src="js/commercial.js"></script>
+<script src="js/commercial.js?v=164"></script>
+<script src="js/prestataires.js?v=164"></script>
 <script src="js/factures.js"></script>
-<script src="js/config.js"></script>
+<script src="js/config.js?v=164"></script>
 <script src="js/exports.js"></script>
 <script src="js/forms.js"></script>
 <script src="js/project-sheet.js"></script>
@@ -722,14 +811,14 @@
 <script src="js/project-extensions.js"></script>
 <script src="js/project-modal.js"></script>
 <!-- DCN FIX PLAN DE CHARGE V6 : filtres standard/compact + charges masquées -->
-<script src="js/charge-filters.js"></script>
+<script src="js/charge-filters.js?v=164"></script>
 <!-- ══ DCN NAV V2 — Glissières haut/bas + boutons ◀ ▶ + mois actuel ══ -->
 <script src="js/scroll-sync.js"></script>
 <script src="js/cockpit.js"></script>
 <script src="js/navigation.js"></script>
-<script src="js/permissions.js?v=163"></script>
-<script src="js/lazy-load.js?v=163"></script>
-<script src="js/bidirectional-sync.js?v=163"></script>
-<script src="js/save-adapter.js?v=163"></script>
-<script src="js/pre-init.js?v=163"></script>
+<script src="js/permissions.js?v=164"></script>
+<script src="js/lazy-load.js?v=164"></script>
+<script src="js/bidirectional-sync.js?v=164"></script>
+<script src="js/save-adapter.js?v=164"></script>
+<script src="js/pre-init.js?v=164"></script>
 </body></html>

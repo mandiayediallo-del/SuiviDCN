@@ -1,9 +1,9 @@
-/* DCN V16.3 — API Google Sheets : chargement rapide + synchronisation bidirectionnelle. */
+/* DCN V16.4 — API Google Sheets : chargement rapide + synchronisation bidirectionnelle. */
 (function(){
   'use strict';
   const TABLES=[
     'UTILISATEURS','PROJETS','AO','DEVIS','MISSIONS','AFFECTATIONS','PREVISIONS','CHARGES',
-    'FACTURES','ETABLISSEMENTS','CALENDRIER','PARAMETRES','PREFERENCES_UTILISATEURS'
+    'FACTURES','ETABLISSEMENTS','PRESTATAIRES','CALENDRIER','PARAMETRES','PREFERENCES_UTILISATEURS'
   ];
   function bridge(){
     if(!window.DCN_BRIDGE)throw new Error('Pont Apps Script non initialisé');
@@ -25,7 +25,7 @@
     return all;
   }
   window.DCN_API={
-    mode:'google-sheets-gis-bidirectional-v16.3',
+    mode:'google-sheets-gis-bidirectional-v16.4',
     tables:TABLES.slice(),
     isConfigured(){return !!window.DCN_BRIDGE?.isConfigured();},
     health(){return bridge().request('health',{});},
@@ -44,7 +44,7 @@
         if(onProgress)onProgress({done:1,total:1,name:'Données principales'});
         return fast;
       }catch(fastErr){
-        console.warn('[DCN V16.3] bootstrap-fast indisponible, retour au chargement historique',fastErr);
+        console.warn('[DCN V16.4] bootstrap-fast indisponible, retour au chargement historique',fastErr);
         const meta=await bridge().request('bootstrap-lite',{});
         const tables={};let done=0;
         for(const name of TABLES){

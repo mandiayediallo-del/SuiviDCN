@@ -17,7 +17,10 @@
   function tablesToLegacy(tables){
     tables=tables||{};
     const users=(tables.UTILISATEURS||[]).filter(active);
-    C.userIdByName={};users.forEach(r=>{if(r.nom)C.userIdByName[r.nom]=r.id;});
+    C.userIdByName={};users.forEach(r=>{
+      const nom=String(r.nom||'').trim(),prenom=String(r.prenom||'').trim(),full=[prenom,nom].filter(Boolean).join(' ').trim();
+      [nom,prenom,full].filter(Boolean).forEach(k=>C.userIdByName[k]=r.id);
+    });
     const etabs=(tables.ETABLISSEMENTS||[]).filter(active);
     C.etabIdByName={};etabs.forEach(r=>{if(r.nom)C.etabIdByName[r.nom]=r.id;});
     const devisRows=(tables.DEVIS||[]).filter(active);
@@ -35,8 +38,9 @@
     });
 
     const membres=users.map(r=>mergeExtra(r,{
-      id:r.id,nom:r.nom||'',email:r.email||'',role:r.role||'',capaciteBase:num(r.capaciteBase)||100,
-      statut:r.statut||'Actif',niveauAcces:r.niveauAcces||''
+      id:r.id,nom:r.nom||'',prenom:r.prenom||'',email:r.email||'',role:r.role||'',capaciteBase:num(r.capaciteBase)||100,
+      typeRessource:r.typeRessource||'Interne',prestataireId:r.prestataireId||'',societe:r.societe||'',
+      statut:r.statut||'Actif',niveauAcces:r.niveauAcces||((r.typeRessource||'Interne')==='Externe'?'Aucun accès':'Collaborateur')
     }));
 
     const projets=(tables.PROJETS||[]).filter(active).map(r=>{
@@ -124,9 +128,15 @@
       contactFonction:r.contactFonction||'',contactMail:r.contactMail||'',contactTel:r.contactTel||'',commentaire:r.commentaire||'',
       jamaisContacte:bool(r.jamaisContacte)
     }));
+    const prestataires=(tables.PRESTATAIRES||[]).filter(active).map(r=>mergeExtra(r,{
+      id:r.id,raisonSociale:r.raisonSociale||'',nomCommercial:r.nomCommercial||'',siret:r.siret||'',pays:r.pays||'',adresse:r.adresse||'',
+      contactPrenom:r.contactPrenom||'',contactNom:r.contactNom||'',contactFonction:r.contactFonction||'',contactEmail:r.contactEmail||'',contactTel:r.contactTel||'',
+      specialites:r.specialites||'',tjm:num(r.tjm),zoneIntervention:r.zoneIntervention||'',evaluation:num(r.evaluation),
+      assuranceEcheance:r.assuranceEcheance||'',documents:r.documents||'',statut:r.statut||'À tester',notes:r.notes||''
+    }));
     const parametresMensuels={};(tables.CALENDRIER||[]).filter(active).forEach(r=>{parametresMensuels[r.periode]={joursOuvres:num(r.joursOuvres),capaciteReference:num(r.capaciteReference)};});
 
-    return {cfg,membres,projets,pipelineAO,commercial,factures,charge,parametresMensuels,previsionsFacturation,devis,devisDates,devisEmetteurs,lastChargeCpUpdate,devisNotes};
+    return {cfg,membres,projets,pipelineAO,commercial,prestataires,factures,charge,parametresMensuels,previsionsFacturation,devis,devisDates,devisEmetteurs,lastChargeCpUpdate,devisNotes};
   }
 
   const PROJECT_KNOWN=new Set(['id','code','nom','nature','statut','client','agenceDB','responsable','devis','devisId','aoOrigineId','dateDebut','dateFin','montantFacture','avancement','caAnneesPrecedentes','caAnneeEnCours','caAnneesSuivantes','modeFacturation','chargeActif','inclurePrevision','contactNom','contactPrenom','contactFonction','contactMail','contactTel','notes','dateDevis','missionLibelleDevis','sourcePDF','sourcePages','sourceDevisRecap','totalJoursDevis','typeSuivi','dateProchaineAction','chargeEstimee','sourceMode','lastModifiedAt','lastAction','missions','acteurs']);
@@ -144,8 +154,9 @@
   function forecastRows(e,year){const rows=[];rows.push({id:'prev_'+e.projectId+'_01',projetId:e.projectId,periode:'AVANT-'+year,montant:num(e.before),source:e.source||'',lastModifiedAtSource:e.lastModifiedAt||'',lastActionSource:e.lastAction||''});(e.months||[]).slice(0,12).forEach((v,i)=>rows.push({id:'prev_'+e.projectId+'_'+String(i+2).padStart(2,'0'),projetId:e.projectId,periode:year+'-'+String(i+1).padStart(2,'0'),montant:num(v),source:e.source||'',lastModifiedAtSource:e.lastModifiedAt||'',lastActionSource:e.lastAction||''}));rows.push({id:'prev_'+e.projectId+'_14',projetId:e.projectId,periode:'APRES-'+year,montant:num(e.after),source:e.source||'',lastModifiedAtSource:e.lastModifiedAt||'',lastActionSource:e.lastAction||''});return rows;}
   function chargeRows(mid,period,e){let n=0;const rows=[];Object.keys((e&&e.projets)||{}).sort().forEach(oid=>rows.push({id:'chg_'+hash(mid+'|'+period+'|PROJET|'+oid),membreId:mid,periode:period,typeCharge:'PROJET',objetType:'PROJET',objetId:oid,valeurPct:num(e.projets[oid]),commentaire:''}));[['DIVERS','divers'],['FORMATION','formation'],['CONGES','conges'],['ABSENCES','absences']].forEach(([t,k])=>rows.push({id:'chg_'+hash(mid+'|'+period+'|'+t),membreId:mid,periode:period,typeCharge:t,objetType:'',objetId:'',valeurPct:num((e||{})[k]),commentaire:''}));return rows;}
   function factureRow(f){const known=new Set(['id','projetId','numero','dateEmission','montantHT','dateEcheance','dateEncaissement','commentaire']);return {id:f.id,projetId:f.projetId||'',numero:f.numero||'',dateEmission:f.dateEmission||'',montantHT:num(f.montantHT),dateEcheance:f.dateEcheance||'',dateEncaissement:f.dateEncaissement||'',commentaire:f.commentaire||'',extraJson:extraJson(f,known)};}
-  function userRow(m){const known=new Set(['id','nom','email','role','capaciteBase','statut','niveauAcces']);return {id:m.id,nom:m.nom||'',email:m.email||'',role:m.role||'',capaciteBase:num(m.capaciteBase)||100,statut:m.statut||'Actif',niveauAcces:m.niveauAcces||'',extraJson:extraJson(m,known)};}
+  function userRow(m){const known=new Set(['id','nom','prenom','email','role','capaciteBase','typeRessource','prestataireId','societe','statut','niveauAcces']);return {id:m.id,nom:m.nom||'',prenom:m.prenom||'',email:m.email||'',role:m.role||'',capaciteBase:num(m.capaciteBase)||100,typeRessource:m.typeRessource||'Interne',prestataireId:m.prestataireId||'',societe:m.societe||'',statut:m.statut||'Actif',niveauAcces:m.niveauAcces||'',extraJson:extraJson(m,known)};}
   function commercialRow(c){const id=etabId(c.agenceDB);const known=new Set(['id','agenceDB','region','contactNom','contactPrenom','contactFonction','contactMail','contactTel','statutRelation','priorite','actionFaire','derniereAction','dateDerniereAction','dateProchaineAction','commentaire','jamaisContacte']);return {id,nom:c.agenceDB||'',region:c.region||'',statutRelation:c.statutRelation||'',priorite:c.priorite||'',derniereAction:c.derniereAction||'',dateDerniereAction:c.dateDerniereAction||'',prochaineAction:c.actionFaire||'',dateProchaineAction:c.dateProchaineAction||'',contactNom:c.contactNom||'',contactPrenom:c.contactPrenom||'',contactFonction:c.contactFonction||'',contactMail:c.contactMail||'',contactTel:c.contactTel||'',commentaire:c.commentaire||'',jamaisContacte:!!c.jamaisContacte,sourceCommercialId:c.id||'',extraJson:extraJson(c,known)};}
+  function prestataireRow(x){const known=new Set(['id','raisonSociale','nomCommercial','siret','pays','adresse','contactPrenom','contactNom','contactFonction','contactEmail','contactTel','specialites','tjm','zoneIntervention','evaluation','assuranceEcheance','documents','statut','notes']);return {id:x.id,raisonSociale:x.raisonSociale||'',nomCommercial:x.nomCommercial||'',siret:x.siret||'',pays:x.pays||'',adresse:x.adresse||'',contactPrenom:x.contactPrenom||'',contactNom:x.contactNom||'',contactFonction:x.contactFonction||'',contactEmail:x.contactEmail||'',contactTel:x.contactTel||'',specialites:x.specialites||'',tjm:num(x.tjm),zoneIntervention:x.zoneIntervention||'',evaluation:num(x.evaluation),assuranceEcheance:x.assuranceEcheance||'',documents:x.documents||'',statut:x.statut||'À tester',notes:x.notes||'',extraJson:extraJson(x,known)};}
 
   function stable(v){return JSON.stringify(v,Object.keys(v||{}).sort());}
   function mapBy(arr,key='id'){const m={};(arr||[]).forEach(x=>{if(x&&x[key]!=null)m[x[key]]=x;});return m;}
@@ -163,6 +174,7 @@
     if(changed(oldDb.devisNotes,newDb.devisNotes))ops.push({op:'upsert',table:'PARAMETRES',key:{cle:'legacy.devisNotes'},row:{cle:'legacy.devisNotes',valeur:JSON.stringify(newDb.devisNotes||{}),description:'Notes devis historiques'}});
 
     ops.push(...diffCollections(oldDb.membres||[],newDb.membres||[],'UTILISATEURS',userRow,newDb));
+    ops.push(...diffCollections(oldDb.prestataires||[],newDb.prestataires||[],'PRESTATAIRES',prestataireRow,newDb));
     const opP=mapBy(oldDb.projets||[]),np=mapBy(newDb.projets||[]);
     Object.keys(np).forEach(id=>{if(!opP[id]||changed(opP[id],np[id])){ops.push({op:'upsert',table:'PROJETS',key:{id},row:projectRow(np[id],newDb)});ops.push({op:'replaceGroup',table:'MISSIONS',where:{objetType:'PROJET',objetId:id},rows:missionsRows('PROJET',np[id])});ops.push({op:'replaceGroup',table:'AFFECTATIONS',where:{projetId:id},rows:affectRows(np[id])});}});
     Object.keys(opP).forEach(id=>{if(!np[id]){ops.push({op:'softDelete',table:'PROJETS',key:{id}});ops.push({op:'replaceGroup',table:'MISSIONS',where:{objetType:'PROJET',objetId:id},rows:[]});ops.push({op:'replaceGroup',table:'AFFECTATIONS',where:{projetId:id},rows:[]});}});

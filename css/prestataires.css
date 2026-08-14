@@ -1,0 +1,10 @@
+
+/* DCN V16.4 — styles fonctionnels légers, design global inchangé. */
+.resource-form-grid{margin-top:12px;display:grid;grid-template-columns:repeat(3,minmax(170px,1fr));gap:8px;align-items:end}
+.resource-form-hint{margin-top:8px;font-size:11px;color:var(--gray-dk);padding:8px 10px;border-radius:6px;background:#F8FAFC;border:1px solid var(--border)}
+.resource-type{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
+.resource-type.interne{background:#E8F2FF;color:#1D4ED8}.resource-type.externe{background:#FFF3E0;color:#9A5A00}
+.prest-specialites{max-width:280px;white-space:normal;line-height:1.35}
+.prest-contact{line-height:1.35}.prest-contact .sub{font-size:10px;color:var(--gray-dk)}
+.prest-rating{font-weight:700;color:var(--navy)}
+@media(max-width:1100px){.resource-form-grid{grid-template-columns:repeat(2,minmax(180px,1fr))}}

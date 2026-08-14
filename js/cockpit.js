@@ -43,11 +43,14 @@
     /* Charge équipe */
     (typeof activeMembers==='function'?activeMembers():[]).forEach(m=>{
       const t=typeof calcChargeTotale==='function'?calcChargeTotale(m.id,mk):0;
+      const cap=typeof getMemberCapacity==='function'?getMemberCapacity(m.id,mk):100;
+      const occ=typeof calcOccupationRate==='function'?calcOccupationRate(m.id,mk):(cap>0?t/cap*100:0);
+      const name=typeof resourceDisplayName==='function'?resourceDisplayName(m):m.nom;
       const high=Number(DB.cfg?.seuilChargeHaute)||90, low=Number(DB.cfg?.seuilChargeBasse)||30;
-      if(t>=high){
-        pushAction(actions,{level:'danger',category:'Charge',score:116+Math.min(20,(t-high)/5),title:`${m.nom} en surcharge`,detail:`Charge ${Math.round(t)} % sur ${typeof monthLabel==='function'?monthLabel():mk}. Rééquilibrage à examiner.`,link:'charge'});
-      }else if(t>0&&t<low){
-        pushAction(actions,{level:'info',category:'Charge',score:35,title:`${m.nom} en sous-charge`,detail:`Charge ${Math.round(t)} % sur ${typeof monthLabel==='function'?monthLabel():mk}.`,link:'charge'});
+      if(occ>=high){
+        pushAction(actions,{level:'danger',category:'Charge',score:116+Math.min(20,(occ-high)/5),title:`${name} en surcharge`,detail:`Charge ${Math.round(t)} % / capacité ${Math.round(cap)} % (${Math.round(occ)} %) sur ${typeof monthLabel==='function'?monthLabel():mk}. Rééquilibrage à examiner.`,link:'charge'});
+      }else if(t>0&&occ<low){
+        pushAction(actions,{level:'info',category:'Charge',score:35,title:`${name} en sous-charge`,detail:`Charge ${Math.round(t)} % / capacité ${Math.round(cap)} % (${Math.round(occ)} %) sur ${typeof monthLabel==='function'?monthLabel():mk}.`,link:'charge'});
       }
     });
 
