@@ -5,5 +5,6 @@ window.DCN_RUNTIME_CONFIG={
   GOOGLE_CLIENT_ID:'656731707257-8ajqdki2s011mr3dqlqtqpcvc6p3mle5.apps.googleusercontent.com',
   ALLOWED_FRONTEND_ORIGIN:'https://mandiayediallo-del.github.io',
   SYNC_DEBOUNCE_MS:650,
+  SYNC_POLL_MS:25000,
   REQUEST_TIMEOUT_MS:45000
 };

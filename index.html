@@ -6,7 +6,7 @@
 <!DOCTYPE html>
 
 <html lang="fr"><head>
-<!-- DCN SUIVI V16 — Google Identity Services + Apps Script + Google Sheets -->
+<!-- DCN SUIVI V16.3 — droits Manager/Collaborateur + synchronisation bidirectionnelle -->
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control"/>
@@ -31,7 +31,7 @@
 <link href="css/navigation.css" rel="stylesheet"/>
 <link href="css/ux-enhancements.css" rel="stylesheet"/>
 <script async="" defer="" src="https://accounts.google.com/gsi/client?hl=fr"></script></head>
-<body><script src="js/runtime-config.js?v=160"></script><script src="js/state.js?v=160"></script><script src="js/auth.js?v=160"></script><script src="js/bridge.js?v=160"></script><script src="js/api.js?v=162"></script><script src="data/empty-db.js?v=160"></script><script src="js/data-mapper.js?v=160"></script><script src="js/sync.js?v=162"></script>
+<body><script src="js/runtime-config.js?v=163"></script><script src="js/state.js?v=160"></script><script src="js/auth.js?v=160"></script><script src="js/bridge.js?v=160"></script><script src="js/api.js?v=163"></script><script src="data/empty-db.js?v=160"></script><script src="js/data-mapper.js?v=160"></script><script src="js/sync.js?v=163"></script>
 <nav id="sb">
 <div class="logo"><div class="logo-t">Demathieu Bard</div><div class="logo-s">Construction Numérique</div><div id="serviceNameBadge" style="display:none;margin-top:6px;padding:3px 8px;background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.3);border-radius:12px;font-size:10px;color:var(--accent);font-weight:600;letter-spacing:.3px;"></div></div>
 <div class="nav-sec">
@@ -64,7 +64,7 @@
 <button class="btn btn-outline" onclick="exportJSON()" title="Exporter les données en JSON">↓ Exporter JSON</button>
 <button class="btn" onclick="document.getElementById('jsonImportInput').click()" style="background:#16A34A;color:#fff;border:1px solid #15803D;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;" title="Importer un fichier JSON">↑ Importer JSON</button>
 <button class="btn btn-primary" onclick="exportExcel()">Export Excel</button>
-<button class="btn btn-success" onclick="saveHtmlFile()" title="Forcer la synchronisation avec Google Sheets">💾 Sauvegarder les données</button>
+<button class="btn btn-success" id="syncNowBtn" onclick="synchronizeNow()" title="Envoyer les modifications vers Google Sheets et récupérer les changements">↻ Synchroniser</button>
 </div>
 </div>
 <main id="main">
@@ -415,7 +415,23 @@
 </div>
 <div class="page" id="page-config">
 <div class="g2">
-<div class="card"><div class="ch"><span class="ct">Membres de l'équipe</span></div><div class="cb"><table><thead><tr><th>Nom</th><th>Rôle</th><th>Capacité</th><th>Statut</th><th></th></tr></thead><tbody id="tbMembers"></tbody></table><div style="margin-top:10px;display:flex;gap:6px;"><input class="fi" id="newMemberName" placeholder="Nouveau collaborateur" style="flex:1;"/><input class="fi" id="newMemberRole" placeholder="Rôle" style="flex:1;"/><button class="btn btn-primary btn-sm" onclick="addMember()">Ajouter</button></div></div></div>
+<div class="card"><div class="ch"><span class="ct">Collaborateurs</span></div><div class="cb">
+<table><thead><tr><th>Nom</th><th>Email Google</th><th>Fonction</th><th>Capacité</th><th>Accès</th><th>Statut</th><th></th></tr></thead><tbody id="tbMembers"></tbody></table>
+<input id="editMemberId" type="hidden"/>
+<div style="margin-top:12px;display:grid;grid-template-columns:1.1fr 1.5fr 1.1fr .65fr .9fr .8fr;gap:6px;align-items:end;">
+  <div class="fgrp"><label class="flbl">Nom</label><input class="fi" id="newMemberName" placeholder="Nom du collaborateur"/></div>
+  <div class="fgrp"><label class="flbl">Email Google</label><input class="fi" id="newMemberEmail" type="email" placeholder="prenom.nom@gmail.com"/></div>
+  <div class="fgrp"><label class="flbl">Fonction</label><input class="fi" id="newMemberRole" placeholder="Ex : BIM Manager"/></div>
+  <div class="fgrp"><label class="flbl">Capacité (%)</label><input class="fi" id="newMemberCapacity" type="number" min="0" max="200" value="100"/></div>
+  <div class="fgrp"><label class="flbl">Niveau d'accès</label><select class="fs" id="newMemberAccess"><option value="Collaborateur">Collaborateur</option><option value="Manager">Manager</option></select></div>
+  <div class="fgrp"><label class="flbl">Statut</label><select class="fs" id="newMemberStatus"><option value="Actif">Actif</option><option value="Inactif">Inactif</option></select></div>
+</div>
+<div style="margin-top:10px;display:flex;gap:6px;justify-content:flex-end;">
+  <button class="btn btn-outline btn-sm" id="memberCancelBtn" onclick="cancelMemberEdit()" style="display:none;">Annuler</button>
+  <button class="btn btn-primary btn-sm" id="memberSaveBtn" onclick="saveMemberForm()">Ajouter le collaborateur</button>
+</div>
+<div style="margin-top:8px;font-size:11px;color:var(--muted);">L'adresse doit correspondre au compte Google utilisé pour se connecter à SuiviDCN.</div>
+</div></div>
 <div class="card"><div class="ch"><span class="ct">Paramètres globaux</span></div><div class="cb" style="display:flex;flex-direction:column;gap:10px;">
 <div class="fgrp"><label class="flbl">Nom du service</label><input class="fi" id="cfgServiceName" placeholder="Ex : DCN Île-de-France"/></div>
 <div class="fgrp"><label class="flbl">Année de suivi</label><input class="fi" id="cfgYear" type="number"/></div>
@@ -711,7 +727,9 @@
 <script src="js/scroll-sync.js"></script>
 <script src="js/cockpit.js"></script>
 <script src="js/navigation.js"></script>
-<script src="js/save-adapter.js"></script>
-<script src="js/lazy-load.js?v=162"></script>
-<script src="js/pre-init.js?v=162"></script>
+<script src="js/permissions.js?v=163"></script>
+<script src="js/lazy-load.js?v=163"></script>
+<script src="js/bidirectional-sync.js?v=163"></script>
+<script src="js/save-adapter.js?v=163"></script>
+<script src="js/pre-init.js?v=163"></script>
 </body></html>
