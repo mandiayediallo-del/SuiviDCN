@@ -251,54 +251,61 @@ function buildProjectSheetHTML(id, forWord=false){
     <div class="ps-foot"><span>Construction Numérique – Demathieu Bard</span><span>Document confidentiel</span></div>
   </div>`;
 }
-function ensureProjectSheetDom(){
-  let ov=document.getElementById('projectSheetOv');
-  let preview=document.getElementById('projectSheetPreview');
-  if(ov && preview)return {ov,preview};
-  ov=document.createElement('div');
-  ov.className='ov';
-  ov.id='projectSheetOv';
-  ov.innerHTML=`<div class="project-sheet-modal">
-    <div class="mh"><div class="mt">Fiche projet</div><button class="mx" onclick="closeProjectSheet()">×</button></div>
-    <div class="mb" style="padding:12px 16px;border-bottom:1px solid var(--border);">
-      <div class="project-sheet-actions">
-        <button class="btn btn-accent" onclick="editCurrentProjectSheet();" style="font-weight:700;">✎ Éditer</button>
-        <button class="btn btn-primary" onclick="downloadProjectSheetWord()">Télécharger Word</button>
-        <button class="btn btn-outline" onclick="printProjectSheet()">Imprimer / PDF</button>
-        <button class="btn btn-outline" onclick="closeProjectSheet()">Fermer</button>
-      </div>
-    </div>
-    <div class="project-sheet-preview" id="projectSheetPreview"></div>
-  </div>`;
-  document.body.appendChild(ov);
-  preview=ov.querySelector('#projectSheetPreview');
-  return {ov,preview};
-}
-
 function openProjectSheet(id){
   id=String(id||'').trim();
   if(!id)return;
+
+  // IMPORTANT : utiliser directement la variable DB de l'application.
   const entity=getSheetEntity(id);
   if(!entity){
-    console.warn('[DCN V16.4.1] fiche introuvable',id);
+    console.warn('[DCN V16.4.3] Projet / AO introuvable :',id);
     if(typeof toast==='function')toast('Projet introuvable','err');
     return;
   }
-  CURRENT_PROJECT_SHEET_ID=id;
-  const shell=ensureProjectSheetDom();
-  shell.ov.classList.add('open');
-  try{
-    shell.preview.innerHTML=buildProjectSheetHTML(id);
-  }catch(err){
-    console.error('[DCN V16.4.1] ouverture fiche projet',id,err);
-    shell.preview.innerHTML=`<div class="project-sheet" style="padding:24px;">
-      <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:10px;">${psEsc(entity.code||'')} — ${psEsc(entity.nom||'Projet')}</div>
-      <div style="font-size:12px;color:var(--gray-dk);margin-bottom:16px;">La fiche complète n'a pas pu être construite.</div>
-      <div class="note-box" style="font-size:11px;">${psEsc(err&&err.message?err.message:String(err))}</div>
-    </div>`;
-    if(typeof toast==='function')toast('La fiche projet s’est ouverte avec une erreur de détail','err');
+
+  const ov=document.getElementById('projectSheetOv');
+  const preview=document.getElementById('projectSheetPreview');
+  if(!ov||!preview){
+    console.error('[DCN V16.4.3] Modale fiche projet absente du HTML');
+    if(typeof toast==='function')toast('Fenêtre de fiche projet indisponible','err');
+    return;
   }
-  if(typeof enhanceSheetQuickNav==='function')setTimeout(enhanceSheetQuickNav,0);
+
+  CURRENT_PROJECT_SHEET_ID=id;
+
+  // Afficher la fenêtre AVANT de construire le contenu :
+  // même si le détail de la fiche rencontre une erreur, le clic reste visible.
+  ov.classList.add('open');
+
+  try{
+    preview.innerHTML=buildProjectSheetHTML(id);
+  }catch(err){
+    console.error('[DCN V16.4.3] Erreur construction fiche projet :',err);
+
+    preview.innerHTML=`
+      <div class="project-sheet">
+        <div class="ps-head">
+          <div class="ps-brand">
+            <div class="ps-brand-main">Construction Numérique</div>
+            <div class="ps-brand-sub">Demathieu Bard</div>
+          </div>
+          <div class="ps-title">
+            <h1>FICHE PROJET</h1>
+          </div>
+        </div>
+        <div class="ps-body">
+          <div style="font-size:22px;font-weight:800;margin-bottom:8px;">
+            ${psEsc(entity.code||'')} ${entity.code?'— ':''}${psEsc(entity.nom||'Projet')}
+          </div>
+          <div style="font-size:12px;color:var(--gray-dk);margin-bottom:18px;">
+            ${psEsc(entity.client||'Client non renseigné')}
+          </div>
+          <div style="padding:12px;border:1px solid #F3C6C6;background:#FFF5F5;border-radius:6px;font-size:11px;color:#8A1C1C;">
+            La fiche détaillée n'a pas pu être construite : ${psEsc(err&&err.message?err.message:String(err))}
+          </div>
+        </div>
+      </div>`;
+  }
 }
 
 function closeProjectSheet(){
@@ -306,21 +313,27 @@ function closeProjectSheet(){
   if(ov)ov.classList.remove('open');
 }
 
-(function bindProjectSheetClicks(){
-  if(window.__DCN_PROJECT_SHEET_CLICK_FIX_1641__)return;
-  window.__DCN_PROJECT_SHEET_CLICK_FIX_1641__=true;
-  document.addEventListener('click',function(e){
-    if(!e.target || !e.target.closest)return;
-    if(e.target.closest('button,a,input,select,textarea,label'))return;
-    const link=e.target.closest('.project-sheet-link[data-project-id], .dcn-project-row[data-project-id]');
-    if(!link)return;
-    const id=link.dataset.projectId;
-    if(!id)return;
-    e.preventDefault();
-    e.stopPropagation();
-    window.openProjectSheet(id);
-  },true);
-})();
+// Exposition explicite : navigation.js peut ensuite envelopper cette fonction,
+// mais il ne la remplace plus par une logique parallèle.
+window.openProjectSheet=openProjectSheet;
+window.closeProjectSheet=closeProjectSheet;
+
+// Une seule gestion du clic pour la liste principale des Projets.
+// Les boutons Éditer / × gardent leurs propres actions et ne déclenchent pas la fiche.
+document.addEventListener('click',function(e){
+  if(!e.target||!e.target.closest)return;
+
+  if(e.target.closest('button,a,input,select,textarea,label'))return;
+
+  const row=e.target.closest('#tbProjects tr[data-project-id]');
+  if(!row)return;
+
+  const id=row.dataset.projectId;
+  if(!id)return;
+
+  e.preventDefault();
+  openProjectSheet(id);
+});
 function editCurrentProjectSheet(){
   const id=CURRENT_PROJECT_SHEET_ID;
   if(!id){toast('Aucune fiche ouverte','err');return;}
