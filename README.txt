@@ -1,8 +1,8 @@
-DCN Suivi — V16.4.1 — Correctif ouverture fiche projet
+DCN V16.4.2 — correctif autonome fiche projet
 
-À déployer sur GitHub :
+Déployer uniquement sur GitHub :
 - index.html
-- js/app-core.js
-- js/project-sheet.js
+- js/project-sheet-fix.js (nouveau)
 
-Aucun changement Apps Script / Google Sheets.
+Ce correctif est chargé après les anciens modules et remplace leur mécanisme
+d'ouverture de fiche. Aucun changement Apps Script / Google Sheets.
