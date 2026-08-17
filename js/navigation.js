@@ -95,12 +95,73 @@ function makeNav(g,key,isTime){
   return {bar,top:topScroll,inner};
 }
 function bindDrag(g){
-  if(g.dataset.dcnUxDrag==='1')return;g.dataset.dcnUxDrag='1';let down=false,startX=0,startLeft=0,moved=false;
-  g.addEventListener('pointerdown',e=>{if(e.button!==0||e.target.closest('input,button,select,textarea,a'))return;down=true;moved=false;startX=e.clientX;startLeft=g.scrollLeft;g.setPointerCapture?.(e.pointerId);g.classList.add('dragging');});
-  g.addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-startX;if(Math.abs(dx)>4)moved=true;g.scrollLeft=startLeft-dx;});
-  const end=e=>{if(!down)return;down=false;g.classList.remove('dragging');try{g.releasePointerCapture?.(e.pointerId);}catch(_){};};g.addEventListener('pointerup',end);g.addEventListener('pointercancel',end);
-  g.addEventListener('click',e=>{if(moved){e.preventDefault();e.stopPropagation();moved=false;}},true);
-  g.addEventListener('wheel',e=>{if(e.shiftKey&&Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();g.scrollLeft+=e.deltaY;}},{passive:false});
+  if(g.dataset.dcnUxDrag==='1')return;
+  g.dataset.dcnUxDrag='1';
+
+  let down=false,startX=0,startLeft=0,moved=false,captured=false,pointerId=null;
+  const DRAG_THRESHOLD=7;
+
+  g.addEventListener('pointerdown',e=>{
+    if(e.button!==0||e.target.closest('input,button,select,textarea,a'))return;
+    down=true;
+    moved=false;
+    captured=false;
+    pointerId=e.pointerId;
+    startX=e.clientX;
+    startLeft=g.scrollLeft;
+
+    // IMPORTANT V16.4.4 :
+    // ne PAS capturer le pointeur ici.
+    // Un clic simple doit rester ciblé sur la ligne/cellule cliquée.
+  });
+
+  g.addEventListener('pointermove',e=>{
+    if(!down)return;
+    const dx=e.clientX-startX;
+
+    if(!moved && Math.abs(dx)>DRAG_THRESHOLD){
+      moved=true;
+      captured=true;
+      try{g.setPointerCapture?.(pointerId);}catch(_){}
+      g.classList.add('dragging');
+    }
+
+    if(moved){
+      g.scrollLeft=startLeft-dx;
+      e.preventDefault();
+    }
+  });
+
+  const end=e=>{
+    if(!down)return;
+    down=false;
+    g.classList.remove('dragging');
+
+    if(captured){
+      try{g.releasePointerCapture?.(pointerId);}catch(_){}
+    }
+    captured=false;
+    pointerId=null;
+  };
+
+  g.addEventListener('pointerup',end);
+  g.addEventListener('pointercancel',end);
+
+  // Uniquement après un VRAI glissement, neutraliser le clic résiduel.
+  // Un clic simple passe normalement vers <tr onclick=...> ou project-sheet-link.
+  g.addEventListener('click',e=>{
+    if(!moved)return;
+    e.preventDefault();
+    e.stopPropagation();
+    moved=false;
+  },true);
+
+  g.addEventListener('wheel',e=>{
+    if(e.shiftKey&&Math.abs(e.deltaY)>Math.abs(e.deltaX)){
+      e.preventDefault();
+      g.scrollLeft+=e.deltaY;
+    }
+  },{passive:false});
 }
 function enhanceGrid(g,index){
   if(!g)return;const key=gridKey(g,index);g.dataset.dcnUxKey=key;g.dataset.dcnNav='v13';g.classList.add('dcn-ux-grid');

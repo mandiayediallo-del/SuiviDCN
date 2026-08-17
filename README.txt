@@ -1,19 +1,20 @@
-DCN Suivi — V16.4.3 — Correctif propre ouverture fiche projet
+DCN V16.4.4 — Correction clic dans les tableaux horizontaux
 
-CAUSES TRAITÉES
-- Suppression du correctif V16.4.2 basé sur window.DB.
-- Une seule logique d'ouverture de fiche.
-- Les lignes Projets portent data-project-id.
-- project-sheet.js utilise directement la vraie variable DB.
-- La modale est ouverte avant la construction détaillée de la fiche.
-- Si le contenu détaillé échoue, une fiche minimale s'affiche avec l'erreur.
+CAUSE IDENTIFIÉE
+navigation.js capturait le pointeur dès pointerdown avec setPointerCapture().
+Le clic était alors retargeté vers le conteneur .tw au lieu de la ligne projet/AO.
 
-A DEPLOYER SUR GITHUB
+CONSÉQUENCE
+- Fiche projet : ne s'ouvrait pas dans la grande table Projets.
+- Fiche AO : ne s'ouvrait pas dans Pipeline AO.
+- AO sur page Projets pouvait fonctionner car cette petite table n'était pas forcément enrichie en grille glissable.
+
+CORRECTION
+Le pointeur n'est capturé qu'après un déplacement horizontal réel (> 7 px).
+Un simple clic reste donc un vrai clic sur la ligne.
+
+A DÉPLOYER SUR GITHUB
 - index.html
-- js/app-core.js
-- js/project-sheet.js
+- js/navigation.js
 
-IMPORTANT
-- Ne pas conserver de référence à js/project-sheet-fix.js dans index.html.
-- Le fichier project-sheet-fix.js peut rester physiquement dans le dépôt : il ne sera plus chargé.
-- Aucun changement Apps Script / Google Sheets.
+Aucun changement Apps Script / Google Sheets.
