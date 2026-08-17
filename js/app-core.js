@@ -635,7 +635,7 @@ function renderProjectsPage(){
     const pctBar=pct===null?0:Math.min(100,Math.max(0,pct));
     const contact=[p.contactPrenom,p.contactNom].filter(Boolean).join(' ')||'—';
     const statBg={Solde:'#EDE9FE','Termine':'#F0F3F5'}[p.statut]||'';
-    return `<tr style="${statBg?'background:'+statBg+';opacity:.85;':''}cursor:pointer;" onclick="openProjectSheet('${p.id}')" title="Cliquer pour ouvrir la fiche">
+    return `<tr class="dcn-project-row" data-project-id="${p.id}" style="${statBg?'background:'+statBg+';opacity:.85;':''}cursor:pointer;" title="Cliquer pour ouvrir la fiche">
       <td><div style="font-weight:600;font-size:12px;">${p.code||'—'}</div><div style="font-size:11px;color:var(--gray-dk);max-width:155px;">${p.nom}</div></td>
       <td style="font-size:11px;font-family:monospace;color:var(--blue);white-space:nowrap;">${p.devis||'—'}</td>
       <td>${pillNature(p.nature)}</td><td style="font-size:11px;">${p.client||'—'}</td><td style="font-size:11px;max-width:160px;">${p.agenceDB||'—'}</td>

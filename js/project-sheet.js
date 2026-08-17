@@ -251,8 +251,76 @@ function buildProjectSheetHTML(id, forWord=false){
     <div class="ps-foot"><span>Construction Numérique – Demathieu Bard</span><span>Document confidentiel</span></div>
   </div>`;
 }
-function openProjectSheet(id){CURRENT_PROJECT_SHEET_ID=id;document.getElementById('projectSheetPreview').innerHTML=buildProjectSheetHTML(id);document.getElementById('projectSheetOv').classList.add('open');}
-function closeProjectSheet(){document.getElementById('projectSheetOv').classList.remove('open');}
+function ensureProjectSheetDom(){
+  let ov=document.getElementById('projectSheetOv');
+  let preview=document.getElementById('projectSheetPreview');
+  if(ov && preview)return {ov,preview};
+  ov=document.createElement('div');
+  ov.className='ov';
+  ov.id='projectSheetOv';
+  ov.innerHTML=`<div class="project-sheet-modal">
+    <div class="mh"><div class="mt">Fiche projet</div><button class="mx" onclick="closeProjectSheet()">×</button></div>
+    <div class="mb" style="padding:12px 16px;border-bottom:1px solid var(--border);">
+      <div class="project-sheet-actions">
+        <button class="btn btn-accent" onclick="editCurrentProjectSheet();" style="font-weight:700;">✎ Éditer</button>
+        <button class="btn btn-primary" onclick="downloadProjectSheetWord()">Télécharger Word</button>
+        <button class="btn btn-outline" onclick="printProjectSheet()">Imprimer / PDF</button>
+        <button class="btn btn-outline" onclick="closeProjectSheet()">Fermer</button>
+      </div>
+    </div>
+    <div class="project-sheet-preview" id="projectSheetPreview"></div>
+  </div>`;
+  document.body.appendChild(ov);
+  preview=ov.querySelector('#projectSheetPreview');
+  return {ov,preview};
+}
+
+function openProjectSheet(id){
+  id=String(id||'').trim();
+  if(!id)return;
+  const entity=getSheetEntity(id);
+  if(!entity){
+    console.warn('[DCN V16.4.1] fiche introuvable',id);
+    if(typeof toast==='function')toast('Projet introuvable','err');
+    return;
+  }
+  CURRENT_PROJECT_SHEET_ID=id;
+  const shell=ensureProjectSheetDom();
+  shell.ov.classList.add('open');
+  try{
+    shell.preview.innerHTML=buildProjectSheetHTML(id);
+  }catch(err){
+    console.error('[DCN V16.4.1] ouverture fiche projet',id,err);
+    shell.preview.innerHTML=`<div class="project-sheet" style="padding:24px;">
+      <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:10px;">${psEsc(entity.code||'')} — ${psEsc(entity.nom||'Projet')}</div>
+      <div style="font-size:12px;color:var(--gray-dk);margin-bottom:16px;">La fiche complète n'a pas pu être construite.</div>
+      <div class="note-box" style="font-size:11px;">${psEsc(err&&err.message?err.message:String(err))}</div>
+    </div>`;
+    if(typeof toast==='function')toast('La fiche projet s’est ouverte avec une erreur de détail','err');
+  }
+  if(typeof enhanceSheetQuickNav==='function')setTimeout(enhanceSheetQuickNav,0);
+}
+
+function closeProjectSheet(){
+  const ov=document.getElementById('projectSheetOv');
+  if(ov)ov.classList.remove('open');
+}
+
+(function bindProjectSheetClicks(){
+  if(window.__DCN_PROJECT_SHEET_CLICK_FIX_1641__)return;
+  window.__DCN_PROJECT_SHEET_CLICK_FIX_1641__=true;
+  document.addEventListener('click',function(e){
+    if(!e.target || !e.target.closest)return;
+    if(e.target.closest('button,a,input,select,textarea,label'))return;
+    const link=e.target.closest('.project-sheet-link[data-project-id], .dcn-project-row[data-project-id]');
+    if(!link)return;
+    const id=link.dataset.projectId;
+    if(!id)return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.openProjectSheet(id);
+  },true);
+})();
 function editCurrentProjectSheet(){
   const id=CURRENT_PROJECT_SHEET_ID;
   if(!id){toast('Aucune fiche ouverte','err');return;}
