@@ -1,4 +1,4 @@
-/* DCN V16.4 — gestion des ressources internes / externes et paramètres. */
+/* DCN V16.4.5 — ressources : protection des identités historiques. */
 (function(){
   'use strict';
 
@@ -22,6 +22,31 @@
   function fullName(m){
     if(typeof resourceFullName==='function')return resourceFullName(m);
     return [m?.prenom,m?.nom].filter(Boolean).join(' ')||m?.nom||m?.prenom||'Ressource';
+  }
+
+  function normName(v){
+    return String(v||'').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,' ').trim();
+  }
+
+  // Compatibilité avec les ressources historiques créées avant Nom / Prénom / Email.
+  // On ne réutilise automatiquement un ancien ID que lorsqu'il n'y a qu'un seul candidat
+  // actif sans email et que son ancien nom correspond exactement au nom OU au prénom saisi.
+  function findLegacyMemberCandidate(nom,prenom,type){
+    const wanted=new Set([normName(nom),normName(prenom)].filter(Boolean));
+    if(!wanted.size)return null;
+
+    const candidates=(DB.membres||[]).filter(m=>{
+      if(typeOf(m)!==type)return false;
+      if(normEmail(m.email))return false;
+      if(String(m.statut||'Actif').toLowerCase()!=='actif')return false;
+
+      const legacy=[normName(m.nom),normName(m.prenom)].filter(Boolean);
+      return legacy.some(x=>wanted.has(x));
+    });
+
+    return candidates.length===1?candidates[0]:null;
   }
   function populateProviderSelect(selected=''){
     const sel=document.getElementById('newMemberProvider');if(!sel)return;
@@ -145,13 +170,30 @@
       if(duplicate){toast('Cette adresse Google est déjà utilisée par '+fullName(duplicate),'err');return;}
     }
 
-    let m=id0?(DB.membres||[]).find(x=>String(x.id)===String(id0)):null;
+    let resolvedId=id0;
+    let relinkedLegacy=false;
+
+    if(!resolvedId && type==='Interne'){
+      const legacy=findLegacyMemberCandidate(nom,prenom,type);
+      if(legacy){
+        const ok=confirm(
+          `${fullName(legacy)} existe déjà dans l’historique avec l’identifiant ${legacy.id} mais sans email Google.\n\n`+
+          `Voulez-vous rattacher ce compte Google à cette ressource existante plutôt que créer un doublon ?`
+        );
+        if(ok){
+          resolvedId=legacy.id;
+          relinkedLegacy=true;
+        }
+      }
+    }
+
+    let m=resolvedId?(DB.membres||[]).find(x=>String(x.id)===String(resolvedId)):null;
     const created=!m;
     if(!m){
       const id=uid('m');
       m={id,nom:'',prenom:'',email:'',role:'',capaciteBase:100,typeRessource:type,prestataireId:'',societe:'',statut:'Actif',niveauAcces:'Collaborateur'};
       DB.membres.push(m);
-      DB.charge[id]={};
+      DB.charge[id]=DB.charge[id]||{};
     }
     Object.assign(m,{
       nom,prenom,email,role,capaciteBase:capacite,typeRessource:type,prestataireId,
@@ -164,7 +206,11 @@
 
     try{
       await window.DCN_SYNC?.flush?.(DB);
-      toast(created?'Ressource ajoutée et synchronisée':'Ressource mise à jour','ok');
+      toast(
+        relinkedLegacy?'Compte Google rattaché à la ressource historique':
+        created?'Ressource ajoutée et synchronisée':'Ressource mise à jour',
+        'ok'
+      );
     }catch(e){
       toast('Modification locale enregistrée, mais synchronisation Google impossible','err');
     }
