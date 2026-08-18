@@ -1,21 +1,25 @@
-DCN Suivi — V16.4.5 — Identité Akli / doublons collaborateurs
+DCN Suivi — V16.4.6 — Synchronisation charges Collaborateur
 
-OBJECTIF
-- Akli conserve son identifiant historique m2.
-- Son compte Google devient akli15285@gmail.com.
-- Les charges et affectations existantes restent liées à m2.
-- Si un doublon Akli a déjà été créé, son googleSub et ses éventuelles nouvelles références
-  sont rapatriés vers m2 puis le doublon est archivé.
-- Une adresse Google ne peut plus être utilisée par deux ressources actives.
-- Lors de l'ajout d'un collaborateur, l'application propose de réutiliser un ancien ID
-  actif sans email lorsqu'un seul candidat historique correspond.
+CAUSE RACINE
+L'ouverture du Plan de charge appelait getMonthConfig() pour les 12 mois.
+Lorsqu'un mois CALENDRIER était absent, cette simple lecture ajoutait
+silencieusement le mois dans DB.parametresMensuels.
 
-DEPLOIEMENT
-1. Apps Script : remplacer Code.gs par apps-script/Code.gs.
-2. Enregistrer puis redéployer le Web App (nouvelle version).
-3. Dans l'éditeur Apps Script, exécuter UNE FOIS la fonction repairAkliIdentity().
-4. Vérifier dans le journal d'exécution que le résultat contient ok:true et targetId:"m2".
-5. GitHub : remplacer index.html et js/config.js.
-6. Akli : se déconnecter/reconnecter avec Akli15285@gmail.com puis Ctrl+F5 si nécessaire.
+Pour un Collaborateur :
+- modification CHARGES = autorisée
+- modification CALENDRIER = interdite
 
-Aucun changement manuel à faire dans les 253 lignes historiques de charges.
+Le diff envoyait les deux dans le même lot, donc tout le lot était refusé.
+La charge restait locale puis disparaissait à la reconnexion.
+
+CORRECTION
+- getMonthConfig() devient une lecture pure : aucun changement DB lors du rendu.
+- updateMonthParam() crée le mois uniquement lors d'une vraie édition Manager.
+- Aucun changement Apps Script / Google Sheets.
+
+A DEPLOYER SUR GITHUB
+- index.html
+- js/app-core.js
+
+APRES DEPLOIEMENT
+Akli doit faire Ctrl+F5 (ou se déconnecter/reconnecter) avant de ressaisir une charge.

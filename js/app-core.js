@@ -134,7 +134,15 @@ function closeM(id){
 // Fermeture volontaire uniquement via les boutons × / Annuler / actions prévues.
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)e.preventDefault();}));
 function normalizePercent(v){if(v===null||v===undefined)return 0;let s=String(v).trim().replace('%','').replace(',','.');if(!s)return 0;let n=parseFloat(s);if(isNaN(n))return 0;if(n>0&&n<=1)n*=100;return Math.max(0,Math.min(200,n));}
-function getMonthConfig(mk){if(!DB.parametresMensuels[mk])DB.parametresMensuels[mk]={joursOuvres:21,capaciteReference:100};return DB.parametresMensuels[mk];}
+function getMonthConfig(mk){
+  // V16.4.6 : lecture pure.
+  // L'affichage du Plan de charge ne doit jamais créer silencieusement
+  // une ligne CALENDRIER, sinon un Collaborateur génère une modification
+  // non autorisée simplement en ouvrant la page.
+  return (DB.parametresMensuels&&DB.parametresMensuels[mk])
+    ? DB.parametresMensuels[mk]
+    : {joursOuvres:21,capaciteReference:100};
+}
 function getChargeEntry(mid,mk){if(!DB.charge[mid])DB.charge[mid]={};if(!DB.charge[mid][mk])DB.charge[mid][mk]={projets:{},divers:0,formation:0,conges:0,absences:0};var e=DB.charge[mid][mk];if(e.divers===undefined)e.divers=0;return e;}
 /* ── V8 : moteur de calcul métier centralisé ───────────────────────────────
    Toutes les vues doivent passer par ces fonctions pour éviter qu'une même
@@ -635,7 +643,7 @@ function renderProjectsPage(){
     const pctBar=pct===null?0:Math.min(100,Math.max(0,pct));
     const contact=[p.contactPrenom,p.contactNom].filter(Boolean).join(' ')||'—';
     const statBg={Solde:'#EDE9FE','Termine':'#F0F3F5'}[p.statut]||'';
-    return `<tr class="dcn-project-row" data-project-id="${p.id}" style="${statBg?'background:'+statBg+';opacity:.85;':''}cursor:pointer;" title="Cliquer pour ouvrir la fiche">
+    return `<tr style="${statBg?'background:'+statBg+';opacity:.85;':''}cursor:pointer;" onclick="openProjectSheet('${p.id}')" title="Cliquer pour ouvrir la fiche">
       <td><div style="font-weight:600;font-size:12px;">${p.code||'—'}</div><div style="font-size:11px;color:var(--gray-dk);max-width:155px;">${p.nom}</div></td>
       <td style="font-size:11px;font-family:monospace;color:var(--blue);white-space:nowrap;">${p.devis||'—'}</td>
       <td>${pillNature(p.nature)}</td><td style="font-size:11px;">${p.client||'—'}</td><td style="font-size:11px;max-width:160px;">${p.agenceDB||'—'}</td>
@@ -679,7 +687,16 @@ function renderMonthParams(){
   for(let i=0;i<12;i++){const mk=monthKey(i),c=getMonthConfig(mk);html+=`<tr><td>${MOIS_L[i]}</td><td><input class="input-mini" type="number" value="${c.joursOuvres}" onchange="updateMonthParam('${mk}','joursOuvres',this.value)"></td><td><input class="input-mini" type="number" value="${c.capaciteReference}" onchange="updateMonthParam('${mk}','capaciteReference',this.value)"></td></tr>`;}
   html+='</tbody></table>';document.getElementById('monthParamsWrap').innerHTML=html;
 }
-function updateMonthParam(mk,key,val){getMonthConfig(mk)[key]=Number(val)||0;saveDB();renderChargePage();}
+function updateMonthParam(mk,key,val){
+  // Seule une vraie action d'édition crée/modifie le mois dans CALENDRIER.
+  DB.parametresMensuels=DB.parametresMensuels||{};
+  if(!DB.parametresMensuels[mk]){
+    DB.parametresMensuels[mk]={joursOuvres:21,capaciteReference:100};
+  }
+  DB.parametresMensuels[mk][key]=Number(val)||0;
+  saveDB();
+  renderChargePage();
+}
 function inputClass(v){return v>=DB.cfg.seuilChargeHaute?'high':v>=DB.cfg.seuilChargeBasse&&v>0?'ok':v>0?'low':'';}
 
 function getChargeInputClass(v){
