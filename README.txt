@@ -1,25 +1,26 @@
-DCN Suivi — V16.4.6 — Synchronisation charges Collaborateur
+DCN Suivi — V16.4.7 — Synchronisation incrémentale des charges
 
 CAUSE RACINE
-L'ouverture du Plan de charge appelait getMonthConfig() pour les 12 mois.
-Lorsqu'un mois CALENDRIER était absent, cette simple lecture ajoutait
-silencieusement le mois dans DB.parametresMensuels.
-
-Pour un Collaborateur :
-- modification CHARGES = autorisée
-- modification CALENDRIER = interdite
-
-Le diff envoyait les deux dans le même lot, donc tout le lot était refusé.
-La charge restait locale puis disparaissait à la reconnexion.
+Jusqu'à V16.4.6, modifier UNE cellule de charge générait un replaceGroup sur tout le mois.
+Pour Akli (m2), le miroir historique contient environ 19 à 24 lignes CHARGES par mois.
+Le serveur supprimait puis recréait toutes ces lignes une par une, avec historique,
+ce qui pouvait dépasser le délai du bridge navigateur (45 s).
 
 CORRECTION
-- getMonthConfig() devient une lecture pure : aucun changement DB lors du rendu.
-- updateMonthParam() crée le mois uniquement lors d'une vraie édition Manager.
-- Aucun changement Apps Script / Google Sheets.
+- Une cellule modifiée produit maintenant un seul upsert CHARGES.
+- Les lignes existantes sont retrouvées par clé métier :
+  membreId + periode + typeCharge (+ objetId pour un projet).
+- L'ID historique d'une ligne existante est conservé.
+- Une nouvelle ligne reçoit un ID généré côté Apps Script.
+- Mettre une charge à 0 met à jour la ligne au lieu de remplacer le mois.
+- Les droits restent inchangés :
+  Manager = toutes les charges ; Collaborateur = uniquement sa propre charge.
 
-A DEPLOYER SUR GITHUB
-- index.html
-- js/app-core.js
+DEPLOIEMENT
+1. Apps Script : remplacer Code.gs par le fichier V16.4.7 puis redéployer le Web App.
+2. GitHub : remplacer index.html et js/data-mapper.js.
+3. Akli : Ctrl+F5 ou déconnexion/reconnexion.
+4. Test : modifier UNE cellule, attendre l'indicateur "Synchronisé", puis vérifier depuis le compte Manager.
 
-APRES DEPLOIEMENT
-Akli doit faire Ctrl+F5 (ou se déconnecter/reconnecter) avant de ressaisir une charge.
+IMPORTANT
+Ce correctif est valable pour tous les utilisateurs, pas uniquement Akli.

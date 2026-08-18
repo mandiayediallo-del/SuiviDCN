@@ -1,4 +1,4 @@
-/* DCN V15 — conversion entre tables Google Sheets normalisées et modèle historique de l'UI. */
+/* DCN V16.4.7 — mapping + synchronisation incrémentale des charges. */
 (function(){
   'use strict';
   const C={etabIdByName:{},devisIdByNumero:{},userIdByName:{}};
@@ -152,7 +152,70 @@
   function missionsRows(type,obj){return (obj.missions||[]).map((m,i)=>({id:'mis_'+type.toLowerCase()+'_'+obj.id+'_'+(i+1),objetType:type,objetId:obj.id,ordre:i+1,mission:m.mission||'',montant:num(m.montant),jours:num(m.jours)}));}
   function affectRows(p){return (p.acteurs||[]).map((a,i)=>({id:'aff_'+p.id+'_'+(i+1),projetId:p.id,membreId:a.membreId||'',nomSource:a.nom||'',roleProjet:a.role||'',principal:!!a.principal}));}
   function forecastRows(e,year){const rows=[];rows.push({id:'prev_'+e.projectId+'_01',projetId:e.projectId,periode:'AVANT-'+year,montant:num(e.before),source:e.source||'',lastModifiedAtSource:e.lastModifiedAt||'',lastActionSource:e.lastAction||''});(e.months||[]).slice(0,12).forEach((v,i)=>rows.push({id:'prev_'+e.projectId+'_'+String(i+2).padStart(2,'0'),projetId:e.projectId,periode:year+'-'+String(i+1).padStart(2,'0'),montant:num(v),source:e.source||'',lastModifiedAtSource:e.lastModifiedAt||'',lastActionSource:e.lastAction||''}));rows.push({id:'prev_'+e.projectId+'_14',projetId:e.projectId,periode:'APRES-'+year,montant:num(e.after),source:e.source||'',lastModifiedAtSource:e.lastModifiedAt||'',lastActionSource:e.lastAction||''});return rows;}
-  function chargeRows(mid,period,e){let n=0;const rows=[];Object.keys((e&&e.projets)||{}).sort().forEach(oid=>rows.push({id:'chg_'+hash(mid+'|'+period+'|PROJET|'+oid),membreId:mid,periode:period,typeCharge:'PROJET',objetType:'PROJET',objetId:oid,valeurPct:num(e.projets[oid]),commentaire:''}));[['DIVERS','divers'],['FORMATION','formation'],['CONGES','conges'],['ABSENCES','absences']].forEach(([t,k])=>rows.push({id:'chg_'+hash(mid+'|'+period+'|'+t),membreId:mid,periode:period,typeCharge:t,objetType:'',objetId:'',valeurPct:num((e||{})[k]),commentaire:''}));return rows;}
+  function chargeRows(mid,period,e){
+    const rows=[];
+    Object.keys((e&&e.projets)||{}).sort().forEach(oid=>rows.push({
+      membreId:mid,periode:period,typeCharge:'PROJET',objetType:'PROJET',objetId:oid,
+      valeurPct:num(e.projets[oid]),commentaire:''
+    }));
+    [['DIVERS','divers'],['FORMATION','formation'],['CONGES','conges'],['ABSENCES','absences']].forEach(([t,k])=>rows.push({
+      membreId:mid,periode:period,typeCharge:t,objetType:'',objetId:'',
+      valeurPct:num((e||{})[k]),commentaire:''
+    }));
+    return rows;
+  }
+
+  function chargeKey(row){
+    const base={membreId:row.membreId,periode:row.periode,typeCharge:row.typeCharge};
+    if(String(row.typeCharge||'').toUpperCase()==='PROJET')base.objetId=row.objetId||'';
+    return base;
+  }
+
+  function chargeSignature(row){
+    return [
+      String(row.membreId||''),String(row.periode||''),String(row.typeCharge||'').toUpperCase(),
+      String(String(row.typeCharge||'').toUpperCase()==='PROJET'?(row.objetId||''):'')
+    ].join('|');
+  }
+
+  function chargeRowComparable(row){
+    return {
+      membreId:String(row.membreId||''),
+      periode:String(row.periode||''),
+      typeCharge:String(row.typeCharge||'').toUpperCase(),
+      objetType:String(row.objetType||''),
+      objetId:String(row.objetId||''),
+      valeurPct:num(row.valeurPct),
+      commentaire:String(row.commentaire||'')
+    };
+  }
+
+  // V16.4.7 : une modification de cellule ne remplace plus tout le mois.
+  // On écrit uniquement la/les lignes CHARGES réellement modifiées.
+  function diffChargePeriod(mid,period,oldEntry,newEntry){
+    const ops=[];
+    const oldRows=chargeRows(mid,period,oldEntry||{});
+    const newRows=chargeRows(mid,period,newEntry||{});
+    const oldMap={}; const newMap={};
+
+    oldRows.forEach(r=>oldMap[chargeSignature(r)]=r);
+    newRows.forEach(r=>newMap[chargeSignature(r)]=r);
+
+    Object.keys(newMap).forEach(sig=>{
+      const a=oldMap[sig],b=newMap[sig];
+      if(!a || changed(chargeRowComparable(a),chargeRowComparable(b))){
+        ops.push({op:'upsert',table:'CHARGES',key:chargeKey(b),row:chargeRowComparable(b)});
+      }
+    });
+
+    Object.keys(oldMap).forEach(sig=>{
+      if(!newMap[sig]){
+        const r=oldMap[sig];
+        ops.push({op:'softDelete',table:'CHARGES',key:chargeKey(r)});
+      }
+    });
+    return ops;
+  }
   function factureRow(f){const known=new Set(['id','projetId','numero','dateEmission','montantHT','dateEcheance','dateEncaissement','commentaire']);return {id:f.id,projetId:f.projetId||'',numero:f.numero||'',dateEmission:f.dateEmission||'',montantHT:num(f.montantHT),dateEcheance:f.dateEcheance||'',dateEncaissement:f.dateEncaissement||'',commentaire:f.commentaire||'',extraJson:extraJson(f,known)};}
   function userRow(m){const known=new Set(['id','nom','prenom','email','role','capaciteBase','typeRessource','prestataireId','societe','statut','niveauAcces']);return {id:m.id,nom:m.nom||'',prenom:m.prenom||'',email:m.email||'',role:m.role||'',capaciteBase:num(m.capaciteBase)||100,typeRessource:m.typeRessource||'Interne',prestataireId:m.prestataireId||'',societe:m.societe||'',statut:m.statut||'Actif',niveauAcces:m.niveauAcces||'',extraJson:extraJson(m,known)};}
   function commercialRow(c){const id=etabId(c.agenceDB);const known=new Set(['id','agenceDB','region','contactNom','contactPrenom','contactFonction','contactMail','contactTel','statutRelation','priorite','actionFaire','derniereAction','dateDerniereAction','dateProchaineAction','commentaire','jamaisContacte']);return {id,nom:c.agenceDB||'',region:c.region||'',statutRelation:c.statutRelation||'',priorite:c.priorite||'',derniereAction:c.derniereAction||'',dateDerniereAction:c.dateDerniereAction||'',prochaineAction:c.actionFaire||'',dateProchaineAction:c.dateProchaineAction||'',contactNom:c.contactNom||'',contactPrenom:c.contactPrenom||'',contactFonction:c.contactFonction||'',contactMail:c.contactMail||'',contactTel:c.contactTel||'',commentaire:c.commentaire||'',jamaisContacte:!!c.jamaisContacte,sourceCommercialId:c.id||'',extraJson:extraJson(c,known)};}
@@ -192,7 +255,17 @@
     Object.keys(oldF).forEach(pid=>{if(!newF[pid])ops.push({op:'replaceGroup',table:'PREVISIONS',where:{projetId:pid},rows:[]});});
 
     const mids=new Set([...Object.keys(oldDb.charge||{}),...Object.keys(newDb.charge||{})]);
-    mids.forEach(mid=>{const periods=new Set([...Object.keys((oldDb.charge||{})[mid]||{}),...Object.keys((newDb.charge||{})[mid]||{})]);periods.forEach(period=>{const a=((oldDb.charge||{})[mid]||{})[period],b=((newDb.charge||{})[mid]||{})[period];if(changed(a,b))ops.push({op:'replaceGroup',table:'CHARGES',where:{membreId:mid,periode:period},rows:b?chargeRows(mid,period,b):[]});});});
+    mids.forEach(mid=>{
+      const periods=new Set([
+        ...Object.keys((oldDb.charge||{})[mid]||{}),
+        ...Object.keys((newDb.charge||{})[mid]||{})
+      ]);
+      periods.forEach(period=>{
+        const a=((oldDb.charge||{})[mid]||{})[period];
+        const b=((newDb.charge||{})[mid]||{})[period];
+        if(changed(a,b))ops.push(...diffChargePeriod(mid,period,a,b));
+      });
+    });
 
     ops.push(...diffCollections(oldDb.factures||[],newDb.factures||[],'FACTURES',factureRow,newDb));
 
